@@ -1,0 +1,14 @@
+﻿[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [
+  ".venv",
+  "venv",
+  "node_modules",
+  "dist",
+  "frontend"
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E203", "E501"]

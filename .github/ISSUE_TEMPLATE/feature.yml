@@ -1,0 +1,42 @@
+name: Feature
+description: New feature request
+title: "[Phase X] "
+labels: ["type:feature"]
+body:
+  - type: input
+    id: phase
+    attributes:
+      label: Roadmap Phase
+      description: Phase number from docs/roadmap.md
+      placeholder: "Phase 1"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be achieved?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: In scope and out of scope
+      placeholder: "- In scope: ...\n- Out of scope: ..."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Conditions for completion
+      placeholder: "- [ ] ..."
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Optional checklist
+      placeholder: "- [ ] ..."
