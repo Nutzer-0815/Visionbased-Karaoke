@@ -85,6 +85,14 @@ Schritte (steps):
 2. CI Python-Version auf 3.12 gesetzt.
 3. README-Hinweise auf Python 3.12 aktualisiert.
 
+## 2026-02-12 — Entry 012: Phase 4 Karaoke (Standalone)
+
+Schritte (steps):
+
+1. LRC-Parser und Demo-Audio (data URL) implementiert.
+2. Karaoke-UI mit Play/Pause/Restart und Highlighting hinzugefuegt.
+3. ADR fuer Audio-Quelle dokumentiert.
+
 ## 2026-02-10 — Entry 004: CI-Workflow hinzugefügt
 
 Schritte (steps):

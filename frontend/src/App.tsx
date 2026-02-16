@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { generateSineWavDataUrl } from './karaoke/audio';
+import { parseLrc, type LrcLine } from './karaoke/lrc';
 
 const WS_URL = 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
 const TRACK_STALE_MS = 2000;
+const LRC_URL = '/lyrics/demo.lrc';
 
 type Detection = {
   x1: number;
@@ -51,6 +54,11 @@ function App() {
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
   const [names, setNames] = useState<Record<number, string>>({});
   const [nameInput, setNameInput] = useState('');
+  const [karaokeLines, setKaraokeLines] = useState<LrcLine[]>([]);
+  const [activeLine, setActiveLine] = useState<number>(-1);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const disconnectSocket = useCallback(() => {
     if (wsRef.current) {
@@ -189,6 +197,20 @@ function App() {
     }
     setNameInput(names[selectedTrackId] ?? '');
   }, [selectedTrackId, names]);
+
+  useEffect(() => {
+    const loadLrc = async () => {
+      try {
+        const response = await fetch(LRC_URL);
+        const text = await response.text();
+        setKaraokeLines(parseLrc(text));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadLrc();
+    setAudioSrc(generateSineWavDataUrl());
+  }, []);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -338,6 +360,30 @@ function App() {
   }, [detections, frameSize, names, selectedTrackId]);
 
   useEffect(() => {
+    let rafId = 0;
+    const tick = () => {
+      const audio = audioRef.current;
+      if (audio && karaokeLines.length > 0) {
+        const currentMs = audio.currentTime * 1000;
+        let idx = -1;
+        for (let i = 0; i < karaokeLines.length; i += 1) {
+          if (karaokeLines[i].timeMs <= currentMs) {
+            idx = i;
+          } else {
+            break;
+          }
+        }
+        setActiveLine(idx);
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+    rafId = window.requestAnimationFrame(tick);
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [karaokeLines]);
+
+  useEffect(() => {
     return () => {
       stream?.getTracks().forEach((track) => track.stop());
     };
@@ -413,6 +459,46 @@ function App() {
           <canvas ref={canvasRef} onClick={handleCanvasClick} />
         </div>
         <aside className="hint">{COPY.hint}</aside>
+      </section>
+
+      <section className="karaoke">
+        <div className="karaoke-controls">
+          <h2>Karaoke</h2>
+          <div className="karaoke-buttons">
+            <button
+              className="primary"
+              onClick={() => audioRef.current?.play()}
+              disabled={!audioSrc}
+            >
+              Play
+            </button>
+            <button className="ghost" onClick={() => audioRef.current?.pause()} disabled={!audioSrc}>
+              Pause
+            </button>
+            <button
+              className="ghost"
+              onClick={() => {
+                if (!audioRef.current) {
+                  return;
+                }
+                audioRef.current.currentTime = 0;
+                audioRef.current.play();
+              }}
+              disabled={!audioSrc}
+            >
+              Restart
+            </button>
+          </div>
+          <audio ref={audioRef} src={audioSrc ?? undefined} preload="auto" />
+        </div>
+        <div className="karaoke-lines">
+          {karaokeLines.length === 0 && <p>Keine Lyrics geladen.</p>}
+          {karaokeLines.map((line, index) => (
+            <p key={`${line.timeMs}-${index}`} className={index === activeLine ? 'active' : ''}>
+              {line.text}
+            </p>
+          ))}
+        </div>
       </section>
     </div>
   );
