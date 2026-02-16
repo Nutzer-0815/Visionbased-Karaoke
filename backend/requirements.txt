@@ -1,4 +1,7 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 python-multipart
 pydantic
+ultralytics
+opencv-python-headless
+numpy

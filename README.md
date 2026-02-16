@@ -6,7 +6,7 @@ Dieses Repository folgt einer Issue-by-Issue-Roadmap. Die Spezifikationen liegen
 
 **Quickstart**
 
-Backend (FastAPI):
+Backend (FastAPI, Python 3.12):
 1. `cd backend`
 2. `python -m venv .venv`
 3. `.\.venv\Scripts\Activate.ps1`

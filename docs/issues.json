@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "title": "[Phase 1] Webcam & Canvas Overlay Basics",
+    "body": "Goal:\n- Establish webcam capture, video rendering, and a canvas overlay in the browser.\n\nScope:\n- In scope: getUserMedia, video rendering, canvas alignment, basic UI controls.\n- Out of scope: backend communication, tracking, karaoke.\n\nAcceptance Criteria:\n- Webcam starts/stops without errors.\n- Video renders continuously.\n- Canvas overlay stays aligned with video.",
+    "labels": ["phase-1", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true
+  },
+  {
+    "title": "[Phase 2] Backend Face Detection Pipeline",
+    "body": "Goal:\n- Enable real-time face detection on the backend and return bounding boxes to the frontend.\n\nScope:\n- In scope: WebSocket communication, frame ingestion, YOLOv8 inference, bounding box response.\n- Out of scope: tracking, identity assignment, karaoke.\n\nAcceptance Criteria:\n- Frontend can send frames to backend.\n- Backend returns face bounding boxes in real time.\n- Boxes are rendered in the frontend overlay.",
+    "labels": ["phase-2", "area:backend", "type:feature"],
+    "assignee": "",
+    "created": true
+  },
+  {
+    "title": "[Phase 3] Tracking & Identity Assignment",
+    "body": "Goal:\n- Stabilize detections over time and allow user interaction.\n\nScope:\n- In scope: multi-object tracking, stable track_id, click-to-select face, assign/display names.\n- Out of scope: karaoke playback.\n\nAcceptance Criteria:\n- Track IDs stay stable across multiple seconds.\n- Clicking a face selects the correct track.\n- Assigned names persist while tracking is active.",
+    "labels": ["phase-3", "area:backend", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true
+  },
+  {
+    "title": "[Phase 4] Karaoke Engine (Standalone)",
+    "body": "Goal:\n- Implement karaoke playback and lyric timing without CV dependencies.\n\nScope:\n- In scope: LRC parsing, audio playback, lyric timing/highlighting, play/pause/restart.\n- Out of scope: face integration.\n\nAcceptance Criteria:\n- LRC file is parsed correctly.\n- Lyrics change at correct timestamps.\n- Playback controls work as expected.",
+    "labels": ["phase-4", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true
+  },
+  {
+    "title": "[Phase 5] Karaoke Integrated with Live Faces",
+    "body": "Goal:\n- Bind karaoke lyrics to tracked faces and render them in the overlay.\n\nScope:\n- In scope: assign song to person, render lyrics above face, sync audio and overlay.\n- Out of scope: advanced UI polish.\n\nAcceptance Criteria:\n- Lyrics follow the correct tracked face.\n- Audio playback and lyric display remain synchronized.\n- End-to-end flow works locally.",
+    "labels": ["phase-5", "area:frontend", "area:backend", "type:feature"],
+    "assignee": "",
+    "created": true
+  },
+  {
+    "title": "[Phase 6] Metrics, Evaluation & Polishing",
+    "body": "Goal:\n- Collect and report MVP metrics and document trade-offs.\n\nScope:\n- In scope: latency/FPS metrics, basic resource stats, trade-off documentation.\n- Out of scope: large-scale benchmarking.\n\nAcceptance Criteria:\n- Metrics in docs/metrics-checklist.md are collected at least once.\n- Trade-offs documented in docs/tradeoffs.md.",
+    "labels": ["phase-6", "area:docs", "type:chore"],
+    "assignee": "",
+    "created": true
+  }
+]

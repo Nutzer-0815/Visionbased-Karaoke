@@ -39,6 +39,52 @@ Schritte (steps):
 3. `scripts/create-issues.ps1` erstellt.
 4. `docs/issues.json` als Issue-Quelle angelegt.
 
+## 2026-02-10 — Entry 006: Issues-Backlog angelegt
+
+Schritte (steps):
+
+1. `docs/issues.json` mit Phase-1 bis Phase-6 Issues aus der Roadmap befuellt.
+
+## 2026-02-12 — Entry 007: Phase 2 Backend/Frontend Pipeline
+
+Schritte (steps):
+
+1. Backend-WebSocket erweitert: Frame-Ingestion, YOLOv8 Inference, Detection-Response.
+2. Frontend sendet Base64-JPEG Frames und zeichnet Bounding Boxes.
+3. ADR fuer Frame-Transport und Model-Default dokumentiert.
+4. `docs/issues.json` aktualisiert (created=true).
+
+## 2026-02-12 — Entry 008: Phase 2 Stabilisierung
+
+Schritte (steps):
+
+1. Backend: JSON-Fehlerbehandlung und Frame-Groessenlimit ergaenzt.
+2. Backend: Inference-Fehler werden abgefangen.
+3. Frontend: Fehler-Nachrichten vom Backend anzeigen.
+
+## 2026-02-12 — Entry 009: Phase 3 Tracking & Identity
+
+Schritte (steps):
+
+1. Backend: IOU-Tracker mit track_id fuer detections.
+2. Frontend: Click-to-select und Inline-Name-Input.
+3. ADR fuer Tracking-Ansatz dokumentiert.
+
+## 2026-02-12 — Entry 010: Phase 3 Stabilisierung
+
+Schritte (steps):
+
+1. Backend: Confidence-Threshold eingefuehrt (CONF_THRESHOLD).
+2. Frontend: Selection wird geloescht, wenn Track zu lange nicht gesehen wird.
+
+## 2026-02-12 — Entry 011: Python 3.12 Umstellung
+
+Schritte (steps):
+
+1. Ruff target-version auf py312 gesetzt.
+2. CI Python-Version auf 3.12 gesetzt.
+3. README-Hinweise auf Python 3.12 aktualisiert.
+
 ## 2026-02-10 — Entry 004: CI-Workflow hinzugefügt
 
 Schritte (steps):
