@@ -117,3 +117,10 @@ Schritte (steps):
 1. backend/app/core/config.py Import-Block mit isort-konformer Gruppierung korrigiert (Leerzeile zwischen stdlib und third-party).
 2. Ziel: GitHub Actions Backend-Job (ruff check .) wieder gruen machen.
 
+## 2026-02-17 — Entry 015: CI Fix Frontend Dependency Conflict
+
+Schritte (steps):
+
+1. Frontend-Dev-Dependencies angepasst: `eslint` und `@eslint/js` von 9.x auf 8.57.0.
+2. Ziel: `npm install` im GitHub Actions Frontend-Job ohne Peer-Dependency-Konflikt ausfuehren.
+
