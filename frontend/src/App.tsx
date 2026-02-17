@@ -57,6 +57,7 @@ function App() {
   const [karaokeLines, setKaraokeLines] = useState<LrcLine[]>([]);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [karaokeError, setKaraokeError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -204,8 +205,10 @@ function App() {
         const response = await fetch(LRC_URL);
         const text = await response.text();
         setKaraokeLines(parseLrc(text));
+        setKaraokeError(null);
       } catch (err) {
         console.error(err);
+        setKaraokeError('Lyrics konnten nicht geladen werden.');
       }
     };
     loadLrc();
@@ -384,6 +387,16 @@ function App() {
   }, [karaokeLines]);
 
   useEffect(() => {
+    if (activeLine < 0) {
+      return;
+    }
+    const el = document.querySelector<HTMLParagraphElement>(
+      `.karaoke-lines p[data-line="${activeLine}"]`,
+    );
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [activeLine]);
+
+  useEffect(() => {
     return () => {
       stream?.getTracks().forEach((track) => track.stop());
     };
@@ -492,9 +505,14 @@ function App() {
           <audio ref={audioRef} src={audioSrc ?? undefined} preload="auto" />
         </div>
         <div className="karaoke-lines">
-          {karaokeLines.length === 0 && <p>Keine Lyrics geladen.</p>}
+          {karaokeError && <p>{karaokeError}</p>}
+          {!karaokeError && karaokeLines.length === 0 && <p>Keine Lyrics geladen.</p>}
           {karaokeLines.map((line, index) => (
-            <p key={`${line.timeMs}-${index}`} className={index === activeLine ? 'active' : ''}>
+            <p
+              key={`${line.timeMs}-${index}`}
+              data-line={index}
+              className={index === activeLine ? 'active' : ''}
+            >
               {line.text}
             </p>
           ))}

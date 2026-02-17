@@ -93,6 +93,13 @@ Schritte (steps):
 2. Karaoke-UI mit Play/Pause/Restart und Highlighting hinzugefuegt.
 3. ADR fuer Audio-Quelle dokumentiert.
 
+## 2026-02-12 — Entry 013: Phase 4 QA Patch
+
+Schritte (steps):
+
+1. Karaoke-Fehler werden im UI angezeigt.
+2. Aktive Zeile scrollt automatisch in Sicht.
+
 ## 2026-02-10 — Entry 004: CI-Workflow hinzugefügt
 
 Schritte (steps):
