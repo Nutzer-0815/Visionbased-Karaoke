@@ -124,3 +124,9 @@ Schritte (steps):
 1. Frontend-Dev-Dependencies angepasst: `eslint` und `@eslint/js` von 9.x auf 8.57.0.
 2. Ziel: `npm install` im GitHub Actions Frontend-Job ohne Peer-Dependency-Konflikt ausfuehren.
 
+## 2026-02-17 — Entry 016: CI Fix Frontend JSON BOM
+
+Schritte (steps):
+
+1. frontend/package.json von UTF-8 mit BOM auf UTF-8 ohne BOM umgestellt.
+2. Ziel: Vite/PostCSS JSON-Parse-Fehler (Unexpected token '\ufeff') in GitHub Actions Build beheben.
