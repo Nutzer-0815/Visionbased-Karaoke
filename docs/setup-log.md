@@ -109,3 +109,11 @@ pm install,
 pm run lint, 
 pm run build.
 3. Backend-Job: pip install -r requirements.txt ruff, uff check ..
+
+## 2026-02-17 — Entry 014: CI Fix Ruff Import Order (Backend)
+
+Schritte (steps):
+
+1. backend/app/core/config.py Import-Block mit isort-konformer Gruppierung korrigiert (Leerzeile zwischen stdlib und third-party).
+2. Ziel: GitHub Actions Backend-Job (ruff check .) wieder gruen machen.
+

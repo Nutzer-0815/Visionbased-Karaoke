@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import os
+
 from pydantic import BaseModel
 
 
@@ -18,3 +19,4 @@ def load_settings() -> Settings:
         allowed_origins=allowed_origins,
         log_level=os.getenv("LOG_LEVEL", "INFO"),
     )
+
