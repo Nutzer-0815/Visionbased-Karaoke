@@ -340,7 +340,7 @@ function App() {
     } finally {
       setIsStarting(false);
     }
-  }, [stream, isStarting]);
+  }, [stream, isStarting, resetSessionStats]);
 
   useEffect(() => {
     const video = videoRef.current;

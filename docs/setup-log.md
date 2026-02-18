@@ -172,3 +172,10 @@ Schritte (steps):
 1. Frontend-WebSocket auf automatische Wiederverbindung bei Disconnect erweitert.
 2. Type Guards fuer eingehende WebSocket-Payloads eingefuehrt (TypeScript-Sicherheit).
 3. ADR zur Reconnect-Policy hinzugefuegt: `docs/adr/0007-ws-reconnect-frontend.md`.
+
+## 2026-02-18 — Entry 022: CI Lint Fix (Hook Dependencies)
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: `resetSessionStats` zur Dependency-Liste von `startStream` (`useCallback`) hinzugefuegt.
+2. Ziel: GitHub Actions Frontend-Lint (`react-hooks/exhaustive-deps`) wieder gruen machen.
