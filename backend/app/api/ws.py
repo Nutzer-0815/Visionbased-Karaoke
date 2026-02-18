@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import os
+import time
 from typing import TypedDict
 
 import cv2
@@ -33,6 +34,16 @@ class Track(TypedDict):
     id: int
     bbox: list[float]
     missed: int
+
+
+class StreamMetrics(TypedDict, total=False):
+    decode_ms: float
+    inference_ms: float
+    processing_ms: float
+    backend_fps: float
+    backend_sent_at_ms: int
+    frame_id: int
+    captured_at_ms: int
 
 
 def decode_frame(data: str) -> np.ndarray | None:
@@ -132,9 +143,11 @@ async def websocket_stream(websocket: WebSocket) -> None:
 
     tracks: list[Track] = []
     next_track_id = 1
+    last_processed_at: float | None = None
 
     try:
         while True:
+            processing_start = time.perf_counter()
             try:
                 message = await websocket.receive_json()
             except ValueError:
@@ -150,16 +163,30 @@ async def websocket_stream(websocket: WebSocket) -> None:
                 await websocket.send_json({"type": "error", "message": "missing frame data"})
                 continue
 
+            frame_id = message.get("frame_id")
+            frame_id = frame_id if isinstance(frame_id, int) else None
+
+            captured_at_ms_raw = message.get("captured_at_ms")
+            captured_at_ms = (
+                int(captured_at_ms_raw)
+                if isinstance(captured_at_ms_raw, (int, float))
+                else None
+            )
+
+            decode_start = time.perf_counter()
             frame = decode_frame(data)
+            decode_ms = (time.perf_counter() - decode_start) * 1000
             if frame is None:
                 await websocket.send_json({"type": "error", "message": "failed to decode frame"})
                 continue
 
+            inference_start = time.perf_counter()
             try:
                 results = model(frame, verbose=False)
             except Exception:
                 await websocket.send_json({"type": "error", "message": "inference failed"})
                 continue
+            inference_ms = (time.perf_counter() - inference_start) * 1000
 
             detections: list[Detection] = []
             for box in results[0].boxes:
@@ -182,12 +209,34 @@ async def websocket_stream(websocket: WebSocket) -> None:
 
             detections, tracks, next_track_id = assign_tracks(detections, tracks, next_track_id)
 
+            processing_ms = (time.perf_counter() - processing_start) * 1000
+            now_perf = time.perf_counter()
+            backend_fps = 0.0
+            if last_processed_at is not None:
+                delta = now_perf - last_processed_at
+                if delta > 0:
+                    backend_fps = 1.0 / delta
+            last_processed_at = now_perf
+
+            metrics: StreamMetrics = {
+                "decode_ms": round(decode_ms, 2),
+                "inference_ms": round(inference_ms, 2),
+                "processing_ms": round(processing_ms, 2),
+                "backend_fps": round(backend_fps, 2),
+                "backend_sent_at_ms": int(time.time() * 1000),
+            }
+            if frame_id is not None:
+                metrics["frame_id"] = frame_id
+            if captured_at_ms is not None:
+                metrics["captured_at_ms"] = captured_at_ms
+
             await websocket.send_json(
                 {
                     "type": "detections",
                     "boxes": detections,
                     "width": int(frame.shape[1]),
                     "height": int(frame.shape[0]),
+                    "metrics": metrics,
                 }
             )
     except WebSocketDisconnect:

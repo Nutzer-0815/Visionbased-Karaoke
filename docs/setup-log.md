@@ -147,3 +147,12 @@ Schritte (steps):
 1. Lyrics-Darstellung von Face-gebundenem Canvas-Overlay auf festen Banner umgestellt.
 2. Banner im oberen Fuenftel des Viewports ueber dem Livevideofeed positioniert.
 3. ADR 0005 aktualisiert, um die neue Platzierungsentscheidung zu dokumentieren.
+
+## 2026-02-18 — Entry 019: Phase 6 Runtime Metrics (Start)
+
+Schritte (steps):
+
+1. Backend-WebSocket um Runtime-Metriken erweitert (`decode_ms`, `inference_ms`, `processing_ms`, `backend_fps`).
+2. Frontend sendet `frame_id` + `captured_at_ms` pro Frame und zeigt Runtime-Metriken im UI an.
+3. ADR fuer Metrik-Transport hinzugefuegt: `docs/adr/0006-runtime-metrics-transport.md`.
+4. Trade-off-Dokument erstellt: `docs/tradeoffs.md`.

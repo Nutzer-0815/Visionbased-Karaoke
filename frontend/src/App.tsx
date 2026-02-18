@@ -23,11 +23,32 @@ type DetectionsMessage = {
   boxes: Detection[];
   width: number;
   height: number;
+  metrics?: BackendMetrics;
 };
 
 type ErrorMessage = {
   type: 'error';
   message: string;
+};
+
+type BackendMetrics = {
+  decode_ms: number;
+  inference_ms: number;
+  processing_ms: number;
+  backend_fps: number;
+  backend_sent_at_ms: number;
+  frame_id?: number;
+  captured_at_ms?: number;
+};
+
+type RuntimeMetrics = {
+  e2eLatencyMs: number | null;
+  backendDecodeMs: number | null;
+  backendInferenceMs: number | null;
+  backendProcessingMs: number | null;
+  backendFps: number | null;
+  frontendOverlayFps: number | null;
+  frontendRenderMs: number | null;
 };
 
 const COPY = {
@@ -42,6 +63,8 @@ function App() {
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const lastSeenRef = useRef<Record<number, number>>({});
+  const frameIdRef = useRef(0);
+  const lastOverlayRenderAtRef = useRef<number | null>(null);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -60,6 +83,15 @@ function App() {
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [karaokeError, setKaraokeError] = useState<string | null>(null);
+  const [runtimeMetrics, setRuntimeMetrics] = useState<RuntimeMetrics>({
+    e2eLatencyMs: null,
+    backendDecodeMs: null,
+    backendInferenceMs: null,
+    backendProcessingMs: null,
+    backendFps: null,
+    frontendOverlayFps: null,
+    frontendRenderMs: null,
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -85,6 +117,17 @@ function App() {
     setNames({});
     setSongByTrack({});
     lastSeenRef.current = {};
+    frameIdRef.current = 0;
+    lastOverlayRenderAtRef.current = null;
+    setRuntimeMetrics({
+      e2eLatencyMs: null,
+      backendDecodeMs: null,
+      backendInferenceMs: null,
+      backendProcessingMs: null,
+      backendFps: null,
+      frontendOverlayFps: null,
+      frontendRenderMs: null,
+    });
     disconnectSocket();
   }, [stream, disconnectSocket]);
 
@@ -180,6 +223,20 @@ function App() {
           payload.boxes.forEach((box) => {
             lastSeenRef.current[box.track_id] = now;
           });
+          if (payload.metrics) {
+            const e2eLatencyMs =
+              typeof payload.metrics.captured_at_ms === 'number'
+                ? Math.max(0, now - payload.metrics.captured_at_ms)
+                : null;
+            setRuntimeMetrics((prev) => ({
+              ...prev,
+              e2eLatencyMs: e2eLatencyMs ?? prev.e2eLatencyMs,
+              backendDecodeMs: payload.metrics?.decode_ms ?? prev.backendDecodeMs,
+              backendInferenceMs: payload.metrics?.inference_ms ?? prev.backendInferenceMs,
+              backendProcessingMs: payload.metrics?.processing_ms ?? prev.backendProcessingMs,
+              backendFps: payload.metrics?.backend_fps ?? prev.backendFps,
+            }));
+          }
         } else if (payload.type === 'error' && 'message' in payload) {
           setWsError(payload.message);
         }
@@ -325,8 +382,10 @@ function App() {
     ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
     const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.7);
     const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+    const frameId = (frameIdRef.current += 1);
+    const capturedAtMs = Date.now();
 
-    ws.send(JSON.stringify({ type: 'frame', data: base64 }));
+    ws.send(JSON.stringify({ type: 'frame', data: base64, frame_id: frameId, captured_at_ms: capturedAtMs }));
   }, []);
 
   useEffect(() => {
@@ -386,6 +445,7 @@ function App() {
       return;
     }
 
+    const renderStart = performance.now();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!frameSize) {
@@ -411,6 +471,15 @@ function App() {
       ctx.strokeRect(x, y, w, h);
       ctx.fillText(`${trackLabel} ${box.conf.toFixed(2)}`, x + 4, y + 16);
     });
+    const renderEnd = performance.now();
+    const prevRenderAt = lastOverlayRenderAtRef.current;
+    const overlayFps = prevRenderAt ? 1000 / Math.max(1, renderEnd - prevRenderAt) : null;
+    lastOverlayRenderAtRef.current = renderEnd;
+    setRuntimeMetrics((prev) => ({
+      ...prev,
+      frontendRenderMs: Number((renderEnd - renderStart).toFixed(2)),
+      frontendOverlayFps: overlayFps ? Number(overlayFps.toFixed(2)) : prev.frontendOverlayFps,
+    }));
   }, [detections, frameSize, names, selectedTrackId]);
 
   useEffect(() => {
@@ -464,6 +533,8 @@ function App() {
   const assignedCount = Object.keys(songByTrack).length;
   const hasAssignedSong = assignedCount > 0;
   const activeLyricText = activeLine >= 0 ? karaokeLines[activeLine]?.text ?? '' : '';
+  const fmtMetric = (value: number | null, unit: string): string =>
+    value === null ? '-' : `${value.toFixed(1)} ${unit}`;
 
   return (
     <div className="app">
@@ -504,6 +575,36 @@ function App() {
         </button>
         {error && <span className="error">{error}</span>}
         {wsError && <span className="error">{wsError}</span>}
+      </section>
+
+      <section className="metrics-panel">
+        <h2>Runtime Metrics</h2>
+        <div className="metrics-grid">
+          <div className="metric-item">
+            <span className="metric-label">E2E Latency</span>
+            <strong>{fmtMetric(runtimeMetrics.e2eLatencyMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Backend Inference</span>
+            <strong>{fmtMetric(runtimeMetrics.backendInferenceMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Backend Processing</span>
+            <strong>{fmtMetric(runtimeMetrics.backendProcessingMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Backend FPS</span>
+            <strong>{fmtMetric(runtimeMetrics.backendFps, 'fps')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Overlay Render</span>
+            <strong>{fmtMetric(runtimeMetrics.frontendRenderMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Overlay FPS</span>
+            <strong>{fmtMetric(runtimeMetrics.frontendOverlayFps, 'fps')}</strong>
+          </div>
+        </div>
       </section>
 
       <section className="controls">
