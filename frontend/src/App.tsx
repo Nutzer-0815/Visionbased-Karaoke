@@ -8,6 +8,7 @@ const TRACK_STALE_MS = 2000;
 const LRC_URL = '/lyrics/demo.lrc';
 const DEMO_SONG_ID = 'demo-song';
 const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
+const WS_RECONNECT_DELAY_MS = 1500;
 
 type Detection = {
   x1: number;
@@ -119,6 +120,56 @@ const createSessionAccumulator = (): SessionAccumulator => ({
   startedAtMs: Date.now(),
 });
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isDetection = (value: unknown): value is Detection => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    typeof value.x1 === 'number' &&
+    typeof value.y1 === 'number' &&
+    typeof value.x2 === 'number' &&
+    typeof value.y2 === 'number' &&
+    typeof value.conf === 'number' &&
+    typeof value.cls === 'number' &&
+    typeof value.track_id === 'number'
+  );
+};
+
+const isBackendMetrics = (value: unknown): value is BackendMetrics => {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return (
+    typeof value.decode_ms === 'number' &&
+    typeof value.inference_ms === 'number' &&
+    typeof value.processing_ms === 'number' &&
+    typeof value.backend_fps === 'number' &&
+    typeof value.backend_sent_at_ms === 'number'
+  );
+};
+
+const isDetectionsMessage = (value: unknown): value is DetectionsMessage => {
+  if (!isRecord(value) || value.type !== 'detections') {
+    return false;
+  }
+  if (!Array.isArray(value.boxes) || !value.boxes.every(isDetection)) {
+    return false;
+  }
+  if (typeof value.width !== 'number' || typeof value.height !== 'number') {
+    return false;
+  }
+  if (value.metrics !== undefined && !isBackendMetrics(value.metrics)) {
+    return false;
+  }
+  return true;
+};
+
+const isErrorMessage = (value: unknown): value is ErrorMessage =>
+  isRecord(value) && value.type === 'error' && typeof value.message === 'string';
+
 const COPY = {
   title: 'Face Karaoke AI',
   subtitle: 'Live Face Tracking + Karaoke Overlay (React + Vite + TypeScript)',
@@ -134,6 +185,7 @@ function App() {
   const frameIdRef = useRef(0);
   const lastOverlayRenderAtRef = useRef<number | null>(null);
   const sessionRef = useRef<SessionAccumulator>(createSessionAccumulator());
+  const reconnectAttemptsRef = useRef(0);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -238,6 +290,7 @@ function App() {
     lastSeenRef.current = {};
     frameIdRef.current = 0;
     lastOverlayRenderAtRef.current = null;
+    reconnectAttemptsRef.current = 0;
     resetSessionStats();
     setRuntimeMetrics({
       e2eLatencyMs: null,
@@ -318,78 +371,102 @@ function App() {
     setWsStatus('connecting');
     setWsError(null);
 
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
+    let reconnectTimer: number | null = null;
+    let disposed = false;
 
-    ws.onopen = () => {
-      setWsStatus('connected');
-    };
+    const connect = () => {
+      if (disposed) {
+        return;
+      }
+      setWsStatus('connecting');
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
 
-    ws.onclose = () => {
-      setWsStatus('disconnected');
-    };
+      ws.onopen = () => {
+        reconnectAttemptsRef.current = 0;
+        setWsStatus('connected');
+        setWsError(null);
+      };
 
-    ws.onerror = () => {
-      setWsError('Backend-Verbindung fehlgeschlagen.');
-    };
+      ws.onclose = () => {
+        if (wsRef.current === ws) {
+          wsRef.current = null;
+        }
+        if (disposed) {
+          setWsStatus('disconnected');
+          return;
+        }
+        reconnectAttemptsRef.current += 1;
+        setWsStatus('connecting');
+        setWsError(`Backend getrennt. Reconnect #${reconnectAttemptsRef.current}...`);
+        reconnectTimer = window.setTimeout(connect, WS_RECONNECT_DELAY_MS);
+      };
 
-    ws.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data) as DetectionsMessage | ErrorMessage | { type: string };
-        if (payload.type === 'detections') {
-          setDetections(payload.boxes);
-          setFrameSize({ width: payload.width, height: payload.height });
-          setWsError(null);
-          const now = Date.now();
-          payload.boxes.forEach((box) => {
-            lastSeenRef.current[box.track_id] = now;
-          });
-          if (payload.metrics) {
-            const e2eLatencyMs =
-              typeof payload.metrics.captured_at_ms === 'number'
-                ? Math.max(0, now - payload.metrics.captured_at_ms)
-                : null;
-            setRuntimeMetrics((prev) => ({
-              ...prev,
-              e2eLatencyMs: e2eLatencyMs ?? prev.e2eLatencyMs,
-              backendDecodeMs: payload.metrics?.decode_ms ?? prev.backendDecodeMs,
-              backendInferenceMs: payload.metrics?.inference_ms ?? prev.backendInferenceMs,
-              backendProcessingMs: payload.metrics?.processing_ms ?? prev.backendProcessingMs,
-              backendFps: payload.metrics?.backend_fps ?? prev.backendFps,
-            }));
-            if (e2eLatencyMs !== null) {
-              sessionRef.current.e2e = addSample(sessionRef.current.e2e, e2eLatencyMs);
-            }
-            if (typeof payload.metrics.inference_ms === 'number') {
+      ws.onerror = () => {
+        setWsError('Backend-Verbindung fehlgeschlagen.');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const payloadUnknown: unknown = JSON.parse(event.data);
+          if (isDetectionsMessage(payloadUnknown)) {
+            const payload = payloadUnknown;
+            setDetections(payload.boxes);
+            setFrameSize({ width: payload.width, height: payload.height });
+            setWsError(null);
+            const now = Date.now();
+            payload.boxes.forEach((box) => {
+              lastSeenRef.current[box.track_id] = now;
+            });
+            if (payload.metrics) {
+              const e2eLatencyMs =
+                typeof payload.metrics.captured_at_ms === 'number'
+                  ? Math.max(0, now - payload.metrics.captured_at_ms)
+                  : null;
+              setRuntimeMetrics((prev) => ({
+                ...prev,
+                e2eLatencyMs: e2eLatencyMs ?? prev.e2eLatencyMs,
+                backendDecodeMs: payload.metrics.decode_ms ?? prev.backendDecodeMs,
+                backendInferenceMs: payload.metrics.inference_ms ?? prev.backendInferenceMs,
+                backendProcessingMs: payload.metrics.processing_ms ?? prev.backendProcessingMs,
+                backendFps: payload.metrics.backend_fps ?? prev.backendFps,
+              }));
+              if (e2eLatencyMs !== null) {
+                sessionRef.current.e2e = addSample(sessionRef.current.e2e, e2eLatencyMs);
+              }
               sessionRef.current.backendInference = addSample(
                 sessionRef.current.backendInference,
                 payload.metrics.inference_ms,
               );
-            }
-            if (typeof payload.metrics.processing_ms === 'number') {
               sessionRef.current.backendProcessing = addSample(
                 sessionRef.current.backendProcessing,
                 payload.metrics.processing_ms,
               );
+              if (payload.metrics.backend_fps > 0) {
+                sessionRef.current.backendFps = addSample(
+                  sessionRef.current.backendFps,
+                  payload.metrics.backend_fps,
+                );
+              }
+              refreshSessionMetrics();
             }
-            if (typeof payload.metrics.backend_fps === 'number' && payload.metrics.backend_fps > 0) {
-              sessionRef.current.backendFps = addSample(
-                sessionRef.current.backendFps,
-                payload.metrics.backend_fps,
-              );
-            }
-            refreshSessionMetrics();
+          } else if (isErrorMessage(payloadUnknown)) {
+            setWsError(payloadUnknown.message);
           }
-        } else if (payload.type === 'error' && 'message' in payload) {
-          setWsError(payload.message);
+        } catch (err) {
+          console.error(err);
         }
-      } catch (err) {
-        console.error(err);
-      }
+      };
     };
 
+    connect();
+
     return () => {
-      ws.close();
+      disposed = true;
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+      }
+      wsRef.current?.close();
       wsRef.current = null;
     };
   }, [stream, refreshSessionMetrics]);

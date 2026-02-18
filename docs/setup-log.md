@@ -164,3 +164,11 @@ Schritte (steps):
 1. Frontend: Session-Aggregation fuer Metriken ergaenzt (avg/min/max, dropped frames, backlog).
 2. Frontend: Export als JSON-Datei (`Export Metrics JSON`) hinzugefuegt.
 3. Baseline-Dokument fuer einmalige Messwerte angelegt: `docs/metrics-baseline.md`.
+
+## 2026-02-18 — Entry 021: Phase 6 Robustness (WebSocket Reconnect)
+
+Schritte (steps):
+
+1. Frontend-WebSocket auf automatische Wiederverbindung bei Disconnect erweitert.
+2. Type Guards fuer eingehende WebSocket-Payloads eingefuehrt (TypeScript-Sicherheit).
+3. ADR zur Reconnect-Policy hinzugefuegt: `docs/adr/0007-ws-reconnect-frontend.md`.
