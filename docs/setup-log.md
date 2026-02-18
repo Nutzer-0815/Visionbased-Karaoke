@@ -156,3 +156,11 @@ Schritte (steps):
 2. Frontend sendet `frame_id` + `captured_at_ms` pro Frame und zeigt Runtime-Metriken im UI an.
 3. ADR fuer Metrik-Transport hinzugefuegt: `docs/adr/0006-runtime-metrics-transport.md`.
 4. Trade-off-Dokument erstellt: `docs/tradeoffs.md`.
+
+## 2026-02-18 — Entry 020: Phase 6 Metrics Aggregation & Baseline Template
+
+Schritte (steps):
+
+1. Frontend: Session-Aggregation fuer Metriken ergaenzt (avg/min/max, dropped frames, backlog).
+2. Frontend: Export als JSON-Datei (`Export Metrics JSON`) hinzugefuegt.
+3. Baseline-Dokument fuer einmalige Messwerte angelegt: `docs/metrics-baseline.md`.

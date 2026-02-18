@@ -7,6 +7,7 @@ const FRAME_INTERVAL_MS = 150;
 const TRACK_STALE_MS = 2000;
 const LRC_URL = '/lyrics/demo.lrc';
 const DEMO_SONG_ID = 'demo-song';
+const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
 
 type Detection = {
   x1: number;
@@ -51,6 +52,73 @@ type RuntimeMetrics = {
   frontendRenderMs: number | null;
 };
 
+type SeriesStats = {
+  count: number;
+  sum: number;
+  min: number;
+  max: number;
+};
+
+type SessionAccumulator = {
+  e2e: SeriesStats;
+  backendInference: SeriesStats;
+  backendProcessing: SeriesStats;
+  backendFps: SeriesStats;
+  frontendRender: SeriesStats;
+  frontendOverlayFps: SeriesStats;
+  droppedFrames: number;
+  maxBufferedAmountBytes: number;
+  startedAtMs: number;
+};
+
+type SessionMetrics = {
+  samples: number;
+  durationSec: number;
+  e2eAvgMs: number | null;
+  e2eMinMs: number | null;
+  e2eMaxMs: number | null;
+  inferenceAvgMs: number | null;
+  processingAvgMs: number | null;
+  backendFpsAvg: number | null;
+  overlayRenderAvgMs: number | null;
+  overlayFpsAvg: number | null;
+  droppedFrames: number;
+  maxBufferedKb: number;
+};
+
+const createSeries = (): SeriesStats => ({
+  count: 0,
+  sum: 0,
+  min: Number.POSITIVE_INFINITY,
+  max: Number.NEGATIVE_INFINITY,
+});
+
+const addSample = (series: SeriesStats, value: number): SeriesStats => ({
+  count: series.count + 1,
+  sum: series.sum + value,
+  min: Math.min(series.min, value),
+  max: Math.max(series.max, value),
+});
+
+const seriesAvg = (series: SeriesStats): number | null =>
+  series.count > 0 ? series.sum / series.count : null;
+
+const seriesMin = (series: SeriesStats): number | null => (series.count > 0 ? series.min : null);
+
+const seriesMax = (series: SeriesStats): number | null => (series.count > 0 ? series.max : null);
+
+const createSessionAccumulator = (): SessionAccumulator => ({
+  e2e: createSeries(),
+  backendInference: createSeries(),
+  backendProcessing: createSeries(),
+  backendFps: createSeries(),
+  frontendRender: createSeries(),
+  frontendOverlayFps: createSeries(),
+  droppedFrames: 0,
+  maxBufferedAmountBytes: 0,
+  startedAtMs: Date.now(),
+});
+
 const COPY = {
   title: 'Face Karaoke AI',
   subtitle: 'Live Face Tracking + Karaoke Overlay (React + Vite + TypeScript)',
@@ -65,6 +133,7 @@ function App() {
   const lastSeenRef = useRef<Record<number, number>>({});
   const frameIdRef = useRef(0);
   const lastOverlayRenderAtRef = useRef<number | null>(null);
+  const sessionRef = useRef<SessionAccumulator>(createSessionAccumulator());
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -92,8 +161,58 @@ function App() {
     frontendOverlayFps: null,
     frontendRenderMs: null,
   });
+  const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
+    samples: 0,
+    durationSec: 0,
+    e2eAvgMs: null,
+    e2eMinMs: null,
+    e2eMaxMs: null,
+    inferenceAvgMs: null,
+    processingAvgMs: null,
+    backendFpsAvg: null,
+    overlayRenderAvgMs: null,
+    overlayFpsAvg: null,
+    droppedFrames: 0,
+    maxBufferedKb: 0,
+  });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const refreshSessionMetrics = useCallback(() => {
+    const s = sessionRef.current;
+    setSessionMetrics({
+      samples: s.e2e.count,
+      durationSec: Math.max(0, (Date.now() - s.startedAtMs) / 1000),
+      e2eAvgMs: seriesAvg(s.e2e),
+      e2eMinMs: seriesMin(s.e2e),
+      e2eMaxMs: seriesMax(s.e2e),
+      inferenceAvgMs: seriesAvg(s.backendInference),
+      processingAvgMs: seriesAvg(s.backendProcessing),
+      backendFpsAvg: seriesAvg(s.backendFps),
+      overlayRenderAvgMs: seriesAvg(s.frontendRender),
+      overlayFpsAvg: seriesAvg(s.frontendOverlayFps),
+      droppedFrames: s.droppedFrames,
+      maxBufferedKb: s.maxBufferedAmountBytes / 1024,
+    });
+  }, []);
+
+  const resetSessionStats = useCallback(() => {
+    sessionRef.current = createSessionAccumulator();
+    setSessionMetrics({
+      samples: 0,
+      durationSec: 0,
+      e2eAvgMs: null,
+      e2eMinMs: null,
+      e2eMaxMs: null,
+      inferenceAvgMs: null,
+      processingAvgMs: null,
+      backendFpsAvg: null,
+      overlayRenderAvgMs: null,
+      overlayFpsAvg: null,
+      droppedFrames: 0,
+      maxBufferedKb: 0,
+    });
+  }, []);
 
   const disconnectSocket = useCallback(() => {
     if (wsRef.current) {
@@ -119,6 +238,7 @@ function App() {
     lastSeenRef.current = {};
     frameIdRef.current = 0;
     lastOverlayRenderAtRef.current = null;
+    resetSessionStats();
     setRuntimeMetrics({
       e2eLatencyMs: null,
       backendDecodeMs: null,
@@ -129,7 +249,7 @@ function App() {
       frontendRenderMs: null,
     });
     disconnectSocket();
-  }, [stream, disconnectSocket]);
+  }, [stream, disconnectSocket, resetSessionStats]);
 
   const startStream = useCallback(async () => {
     if (stream || isStarting) {
@@ -143,6 +263,7 @@ function App() {
 
     setIsStarting(true);
     setError(null);
+    resetSessionStats();
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
@@ -236,6 +357,28 @@ function App() {
               backendProcessingMs: payload.metrics?.processing_ms ?? prev.backendProcessingMs,
               backendFps: payload.metrics?.backend_fps ?? prev.backendFps,
             }));
+            if (e2eLatencyMs !== null) {
+              sessionRef.current.e2e = addSample(sessionRef.current.e2e, e2eLatencyMs);
+            }
+            if (typeof payload.metrics.inference_ms === 'number') {
+              sessionRef.current.backendInference = addSample(
+                sessionRef.current.backendInference,
+                payload.metrics.inference_ms,
+              );
+            }
+            if (typeof payload.metrics.processing_ms === 'number') {
+              sessionRef.current.backendProcessing = addSample(
+                sessionRef.current.backendProcessing,
+                payload.metrics.processing_ms,
+              );
+            }
+            if (typeof payload.metrics.backend_fps === 'number' && payload.metrics.backend_fps > 0) {
+              sessionRef.current.backendFps = addSample(
+                sessionRef.current.backendFps,
+                payload.metrics.backend_fps,
+              );
+            }
+            refreshSessionMetrics();
           }
         } else if (payload.type === 'error' && 'message' in payload) {
           setWsError(payload.message);
@@ -249,7 +392,7 @@ function App() {
       ws.close();
       wsRef.current = null;
     };
-  }, [stream]);
+  }, [stream, refreshSessionMetrics]);
 
   useEffect(() => {
     if (selectedTrackId === null) {
@@ -363,7 +506,13 @@ function App() {
       return;
     }
 
-    if (ws.bufferedAmount > 1_000_000) {
+    sessionRef.current.maxBufferedAmountBytes = Math.max(
+      sessionRef.current.maxBufferedAmountBytes,
+      ws.bufferedAmount,
+    );
+    if (ws.bufferedAmount > WS_BUFFER_THRESHOLD_BYTES) {
+      sessionRef.current.droppedFrames += 1;
+      refreshSessionMetrics();
       return;
     }
 
@@ -386,7 +535,7 @@ function App() {
     const capturedAtMs = Date.now();
 
     ws.send(JSON.stringify({ type: 'frame', data: base64, frame_id: frameId, captured_at_ms: capturedAtMs }));
-  }, []);
+  }, [refreshSessionMetrics]);
 
   useEffect(() => {
     if (!stream) {
@@ -472,15 +621,21 @@ function App() {
       ctx.fillText(`${trackLabel} ${box.conf.toFixed(2)}`, x + 4, y + 16);
     });
     const renderEnd = performance.now();
+    const renderMs = renderEnd - renderStart;
     const prevRenderAt = lastOverlayRenderAtRef.current;
     const overlayFps = prevRenderAt ? 1000 / Math.max(1, renderEnd - prevRenderAt) : null;
     lastOverlayRenderAtRef.current = renderEnd;
     setRuntimeMetrics((prev) => ({
       ...prev,
-      frontendRenderMs: Number((renderEnd - renderStart).toFixed(2)),
+      frontendRenderMs: Number(renderMs.toFixed(2)),
       frontendOverlayFps: overlayFps ? Number(overlayFps.toFixed(2)) : prev.frontendOverlayFps,
     }));
-  }, [detections, frameSize, names, selectedTrackId]);
+    sessionRef.current.frontendRender = addSample(sessionRef.current.frontendRender, renderMs);
+    if (overlayFps && overlayFps > 0) {
+      sessionRef.current.frontendOverlayFps = addSample(sessionRef.current.frontendOverlayFps, overlayFps);
+    }
+    refreshSessionMetrics();
+  }, [detections, frameSize, names, selectedTrackId, refreshSessionMetrics]);
 
   useEffect(() => {
     let rafId = 0;
@@ -535,6 +690,29 @@ function App() {
   const activeLyricText = activeLine >= 0 ? karaokeLines[activeLine]?.text ?? '' : '';
   const fmtMetric = (value: number | null, unit: string): string =>
     value === null ? '-' : `${value.toFixed(1)} ${unit}`;
+  const fmtValue = (value: number | null): string => (value === null ? '-' : value.toFixed(1));
+
+  const exportMetrics = useCallback(() => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      frameIntervalMs: FRAME_INTERVAL_MS,
+      wsBufferThresholdBytes: WS_BUFFER_THRESHOLD_BYTES,
+      runtimeSnapshot: runtimeMetrics,
+      sessionSummary: {
+        ...sessionMetrics,
+        durationSec: Number(sessionMetrics.durationSec.toFixed(1)),
+        maxBufferedKb: Number(sessionMetrics.maxBufferedKb.toFixed(1)),
+      },
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    a.href = url;
+    a.download = `metrics-session-${ts}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [runtimeMetrics, sessionMetrics]);
 
   return (
     <div className="app">
@@ -579,6 +757,11 @@ function App() {
 
       <section className="metrics-panel">
         <h2>Runtime Metrics</h2>
+        <div className="metrics-actions">
+          <button className="ghost" onClick={exportMetrics}>
+            Export Metrics JSON
+          </button>
+        </div>
         <div className="metrics-grid">
           <div className="metric-item">
             <span className="metric-label">E2E Latency</span>
@@ -603,6 +786,43 @@ function App() {
           <div className="metric-item">
             <span className="metric-label">Overlay FPS</span>
             <strong>{fmtMetric(runtimeMetrics.frontendOverlayFps, 'fps')}</strong>
+          </div>
+        </div>
+        <h3>Session Summary</h3>
+        <div className="metrics-grid">
+          <div className="metric-item">
+            <span className="metric-label">Samples</span>
+            <strong>{sessionMetrics.samples}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Session Duration</span>
+            <strong>{sessionMetrics.durationSec.toFixed(1)} s</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">E2E Latency Avg</span>
+            <strong>{fmtMetric(sessionMetrics.e2eAvgMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">E2E Min / Max</span>
+            <strong>
+              {fmtValue(sessionMetrics.e2eMinMs)} / {fmtValue(sessionMetrics.e2eMaxMs)} ms
+            </strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Inference Avg</span>
+            <strong>{fmtMetric(sessionMetrics.inferenceAvgMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Overlay Render Avg</span>
+            <strong>{fmtMetric(sessionMetrics.overlayRenderAvgMs, 'ms')}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Dropped Frames</span>
+            <strong>{sessionMetrics.droppedFrames}</strong>
+          </div>
+          <div className="metric-item">
+            <span className="metric-label">Max Backlog</span>
+            <strong>{sessionMetrics.maxBufferedKb.toFixed(1)} KB</strong>
           </div>
         </div>
       </section>
