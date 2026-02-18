@@ -6,6 +6,7 @@ const WS_URL = 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
 const TRACK_STALE_MS = 2000;
 const LRC_URL = '/lyrics/demo.lrc';
+const DEMO_SONG_ID = 'demo-song';
 
 type Detection = {
   x1: number;
@@ -31,8 +32,8 @@ type ErrorMessage = {
 
 const COPY = {
   title: 'Face Karaoke AI',
-  subtitle: 'Webcam + Canvas Overlay Skeleton (React + Vite + TypeScript)',
-  hint: 'Hier entsteht die Live-Preview fuer Tracking & Web Audio (Web Audio) - Backend folgt.',
+  subtitle: 'Live Face Tracking + Karaoke Overlay (React + Vite + TypeScript)',
+  hint: 'Klicke ein Gesicht an, vergebe einen Namen und ordne den Demo-Song zu.',
 };
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
   const [selectedTrackId, setSelectedTrackId] = useState<number | null>(null);
   const [names, setNames] = useState<Record<number, string>>({});
   const [nameInput, setNameInput] = useState('');
+  const [songByTrack, setSongByTrack] = useState<Record<number, string>>({});
   const [karaokeLines, setKaraokeLines] = useState<LrcLine[]>([]);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
@@ -81,6 +83,7 @@ function App() {
     setSelectedTrackId(null);
     setNameInput('');
     setNames({});
+    setSongByTrack({});
     lastSeenRef.current = {};
     disconnectSocket();
   }, [stream, disconnectSocket]);
@@ -217,13 +220,41 @@ function App() {
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
+      const now = Date.now();
       if (selectedTrackId === null) {
+        setSongByTrack((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          Object.keys(prev).forEach((trackIdRaw) => {
+            const trackId = Number(trackIdRaw);
+            const lastSeen = lastSeenRef.current[trackId];
+            if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
+              delete next[trackId];
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
         return;
       }
       const lastSeen = lastSeenRef.current[selectedTrackId];
-      if (!lastSeen || Date.now() - lastSeen > TRACK_STALE_MS) {
+      if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
         setSelectedTrackId(null);
       }
+
+      setSongByTrack((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        Object.keys(prev).forEach((trackIdRaw) => {
+          const trackId = Number(trackIdRaw);
+          const trackLastSeen = lastSeenRef.current[trackId];
+          if (!trackLastSeen || now - trackLastSeen > TRACK_STALE_MS) {
+            delete next[trackId];
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
     }, 500);
 
     return () => {
@@ -246,6 +277,27 @@ function App() {
       return next;
     });
   }, [selectedTrackId, nameInput]);
+
+  const assignDemoSong = useCallback(() => {
+    if (selectedTrackId === null) {
+      return;
+    }
+    setSongByTrack((prev) => ({ ...prev, [selectedTrackId]: DEMO_SONG_ID }));
+  }, [selectedTrackId]);
+
+  const clearSongAssignment = useCallback(() => {
+    if (selectedTrackId === null) {
+      return;
+    }
+    setSongByTrack((prev) => {
+      if (!(selectedTrackId in prev)) {
+        return prev;
+      }
+      const next = { ...prev };
+      delete next[selectedTrackId];
+      return next;
+    });
+  }, [selectedTrackId]);
 
   const sendFrame = useCallback(() => {
     const ws = wsRef.current;
@@ -342,7 +394,6 @@ function App() {
 
     const scaleX = canvas.width / frameSize.width;
     const scaleY = canvas.height / frameSize.height;
-
     detections.forEach((box) => {
       const trackLabel =
         names[box.track_id] ?? (Number.isFinite(box.track_id) ? `#${box.track_id}` : 'untracked');
@@ -408,9 +459,19 @@ function App() {
       : names[selectedTrackId]
         ? `${names[selectedTrackId]} (#${selectedTrackId})`
         : `#${selectedTrackId}`;
+  const isSelectedAssigned =
+    selectedTrackId !== null && songByTrack[selectedTrackId] === DEMO_SONG_ID;
+  const assignedCount = Object.keys(songByTrack).length;
+  const hasAssignedSong = assignedCount > 0;
+  const activeLyricText = activeLine >= 0 ? karaokeLines[activeLine]?.text ?? '' : '';
 
   return (
     <div className="app">
+      {stream && hasAssignedSong && (
+        <div className="lyric-fixed" aria-live="polite">
+          {activeLyricText || '...'}
+        </div>
+      )}
       <header className="header">
         <div>
           <h1>{COPY.title}</h1>
@@ -463,6 +524,23 @@ function App() {
           <button className="ghost" onClick={saveName} disabled={selectedTrackId === null}>
             Name speichern
           </button>
+          <span className="name-label">
+            {selectedTrackId === null
+              ? 'Song: -'
+              : isSelectedAssigned
+                ? 'Song: Demo zugeordnet'
+                : 'Song: nicht zugeordnet'}
+          </span>
+          <button className="ghost" onClick={assignDemoSong} disabled={selectedTrackId === null}>
+            Song zuordnen
+          </button>
+          <button
+            className="ghost"
+            onClick={clearSongAssignment}
+            disabled={selectedTrackId === null || !isSelectedAssigned}
+          >
+            Song entfernen
+          </button>
         </div>
       </section>
 
@@ -477,6 +555,7 @@ function App() {
       <section className="karaoke">
         <div className="karaoke-controls">
           <h2>Karaoke</h2>
+          <p className="song-summary">Zugeordnete Tracks: {assignedCount}</p>
           <div className="karaoke-buttons">
             <button
               className="primary"

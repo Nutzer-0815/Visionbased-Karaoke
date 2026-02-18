@@ -130,3 +130,20 @@ Schritte (steps):
 
 1. frontend/package.json von UTF-8 mit BOM auf UTF-8 ohne BOM umgestellt.
 2. Ziel: Vite/PostCSS JSON-Parse-Fehler (Unexpected token '\ufeff') in GitHub Actions Build beheben.
+
+## 2026-02-18 — Entry 017: Phase 5 Karaoke + Live Faces Integration
+
+Schritte (steps):
+
+1. Frontend: Song-Zuordnung pro `track_id` eingefuehrt (Demo-Song fuer MVP).
+2. Frontend: Aktive Lyric-Zeile als Overlay direkt ueber zugeordneten Gesichtern gerendert.
+3. Frontend: Canvas-Klickinteraktion stabilisiert (`pointer-events: auto`) fuer Face-Selection.
+4. ADR fuer Phase-5-Annahme hinzugefuegt: `docs/adr/0005-phase5-song-assignment.md`.
+
+## 2026-02-18 — Entry 018: Phase 5 Lyric Placement Adjustment
+
+Schritte (steps):
+
+1. Lyrics-Darstellung von Face-gebundenem Canvas-Overlay auf festen Banner umgestellt.
+2. Banner im oberen Fuenftel des Viewports ueber dem Livevideofeed positioniert.
+3. ADR 0005 aktualisiert, um die neue Platzierungsentscheidung zu dokumentieren.
