@@ -179,3 +179,10 @@ Schritte (steps):
 
 1. `frontend/src/App.tsx`: `resetSessionStats` zur Dependency-Liste von `startStream` (`useCallback`) hinzugefuegt.
 2. Ziel: GitHub Actions Frontend-Lint (`react-hooks/exhaustive-deps`) wieder gruen machen.
+
+## 2026-02-18 — Entry 023: TypeScript Guard Fix (`metrics` possibly undefined)
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: innerhalb von `if (payload.metrics)` eine lokale Konstante `metrics` eingefuehrt.
+2. Alle Zugriffe von `payload.metrics.*` auf `metrics.*` umgestellt, um TS18048 (`possibly undefined`) zu vermeiden.

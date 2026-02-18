@@ -419,33 +419,34 @@ function App() {
               lastSeenRef.current[box.track_id] = now;
             });
             if (payload.metrics) {
+              const metrics = payload.metrics;
               const e2eLatencyMs =
-                typeof payload.metrics.captured_at_ms === 'number'
-                  ? Math.max(0, now - payload.metrics.captured_at_ms)
+                typeof metrics.captured_at_ms === 'number'
+                  ? Math.max(0, now - metrics.captured_at_ms)
                   : null;
               setRuntimeMetrics((prev) => ({
                 ...prev,
                 e2eLatencyMs: e2eLatencyMs ?? prev.e2eLatencyMs,
-                backendDecodeMs: payload.metrics.decode_ms ?? prev.backendDecodeMs,
-                backendInferenceMs: payload.metrics.inference_ms ?? prev.backendInferenceMs,
-                backendProcessingMs: payload.metrics.processing_ms ?? prev.backendProcessingMs,
-                backendFps: payload.metrics.backend_fps ?? prev.backendFps,
+                backendDecodeMs: metrics.decode_ms,
+                backendInferenceMs: metrics.inference_ms,
+                backendProcessingMs: metrics.processing_ms,
+                backendFps: metrics.backend_fps,
               }));
               if (e2eLatencyMs !== null) {
                 sessionRef.current.e2e = addSample(sessionRef.current.e2e, e2eLatencyMs);
               }
               sessionRef.current.backendInference = addSample(
                 sessionRef.current.backendInference,
-                payload.metrics.inference_ms,
+                metrics.inference_ms,
               );
               sessionRef.current.backendProcessing = addSample(
                 sessionRef.current.backendProcessing,
-                payload.metrics.processing_ms,
+                metrics.processing_ms,
               );
-              if (payload.metrics.backend_fps > 0) {
+              if (metrics.backend_fps > 0) {
                 sessionRef.current.backendFps = addSample(
                   sessionRef.current.backendFps,
-                  payload.metrics.backend_fps,
+                  metrics.backend_fps,
                 );
               }
               refreshSessionMetrics();
