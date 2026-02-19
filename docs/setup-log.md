@@ -186,3 +186,12 @@ Schritte (steps):
 
 1. `frontend/src/App.tsx`: innerhalb von `if (payload.metrics)` eine lokale Konstante `metrics` eingefuehrt.
 2. Alle Zugriffe von `payload.metrics.*` auf `metrics.*` umgestellt, um TS18048 (`possibly undefined`) zu vermeiden.
+
+## 2026-02-19 — Entry 024: E2E Smoke Test Cleanup (Model File Ignore)
+
+Schritte (steps):
+
+1. Nach E2E-Smoke-Test wurde die lokal heruntergeladene Datei ackend/yolov8n.pt entfernt.
+2. .gitignore erweitert um ackend/*.pt, damit lokale Modellgewichte nicht versehentlich committed werden.
+3. Ziel: Repo sauber halten und große Binardateien aus Git ausschliessen.
+
