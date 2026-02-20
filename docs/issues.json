@@ -39,6 +39,8 @@
     "body": "Goal:\n- Collect and report MVP metrics and document trade-offs.\n\nScope:\n- In scope: latency/FPS metrics, basic resource stats, trade-off documentation.\n- Out of scope: large-scale benchmarking.\n\nAcceptance Criteria:\n- Metrics in docs/metrics-checklist.md are collected at least once.\n- Trade-offs documented in docs/tradeoffs.md.",
     "labels": ["phase-6", "area:docs", "type:chore"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-20"
   }
 ]

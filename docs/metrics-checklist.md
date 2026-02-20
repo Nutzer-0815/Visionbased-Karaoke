@@ -1,13 +1,35 @@
 ﻿## Metrics Checklist
 
-**Status:** Draft  
-**Last updated:** 2026-02-10
+**Status:** Baseline Collected (Phase 6 Closed)  
+**Last updated:** 2026-02-20
 
 This document defines the **metrics and measurement points**
 used to evaluate correctness, performance, and robustness
 of the system.
 
 It is the **single source of truth** for all reported metrics.
+
+---
+
+## Phase 6 Closure Evidence
+
+- Baseline report: `docs/metrics-baseline.md`
+- Trade-off report: `docs/tradeoffs.md`
+- Runtime transport ADR: `docs/adr/0006-runtime-metrics-transport.md`
+- Reconnect ADR: `docs/adr/0007-ws-reconnect-frontend.md`
+
+Backend runtime sample (2026-02-20, 20 frames, WS test):
+
+- Decode time avg/min/max (ms): `1.31 / 0.23 / 19.03`
+- Inference time avg/min/max (ms): `124.52 / 67.79 / 705.24`
+- Processing time avg/min/max (ms): `129.90 / 69.00 / 781.01`
+- Backend FPS avg/min/max: `10.79 / 0.00 / 14.44`
+- Captured-to-backend-sent avg/min/max (ms): `129.60 / 67 / 778`
+
+Note:
+
+- This sample validates collection and reporting pipeline.
+- Full manual quality measurements remain scenario-dependent and are intentionally lightweight for MVP.
 
 ---
 

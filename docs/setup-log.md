@@ -191,7 +191,16 @@ Schritte (steps):
 
 Schritte (steps):
 
-1. Nach E2E-Smoke-Test wurde die lokal heruntergeladene Datei ackend/yolov8n.pt entfernt.
-2. .gitignore erweitert um ackend/*.pt, damit lokale Modellgewichte nicht versehentlich committed werden.
+1. Nach E2E-Smoke-Test wurde die lokal heruntergeladene Datei `backend/yolov8n.pt` entfernt.
+2. `.gitignore` erweitert um `backend/*.pt`, damit lokale Modellgewichte nicht versehentlich committed werden.
 3. Ziel: Repo sauber halten und große Binardateien aus Git ausschliessen.
+
+## 2026-02-20 — Entry 025: Phase 6 Final Closure
+
+Schritte (steps):
+
+1. Runtime-Baseline-Messung (20 WS-Frames) erhoben und in `docs/metrics-baseline.md` dokumentiert.
+2. `docs/metrics-checklist.md` von Draft auf Abschlussstatus mit Evidenz-Block aktualisiert.
+3. `docs/roadmap.md` auf "Phase 0-6 Completed" gesetzt und Completion-Criteria aktualisiert.
+4. GitHub-Issue fuer Phase 6 zur Schliessung vorbereitet.
 
