@@ -4,35 +4,45 @@
     "body": "Goal:\n- Establish webcam capture, video rendering, and a canvas overlay in the browser.\n\nScope:\n- In scope: getUserMedia, video rendering, canvas alignment, basic UI controls.\n- Out of scope: backend communication, tracking, karaoke.\n\nAcceptance Criteria:\n- Webcam starts/stops without errors.\n- Video renders continuously.\n- Canvas overlay stays aligned with video.",
     "labels": ["phase-1", "area:frontend", "type:feature"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-27"
   },
   {
     "title": "[Phase 2] Backend Face Detection Pipeline",
     "body": "Goal:\n- Enable real-time face detection on the backend and return bounding boxes to the frontend.\n\nScope:\n- In scope: WebSocket communication, frame ingestion, YOLOv8 inference, bounding box response.\n- Out of scope: tracking, identity assignment, karaoke.\n\nAcceptance Criteria:\n- Frontend can send frames to backend.\n- Backend returns face bounding boxes in real time.\n- Boxes are rendered in the frontend overlay.",
     "labels": ["phase-2", "area:backend", "type:feature"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-27"
   },
   {
     "title": "[Phase 3] Tracking & Identity Assignment",
     "body": "Goal:\n- Stabilize detections over time and allow user interaction.\n\nScope:\n- In scope: multi-object tracking, stable track_id, click-to-select face, assign/display names.\n- Out of scope: karaoke playback.\n\nAcceptance Criteria:\n- Track IDs stay stable across multiple seconds.\n- Clicking a face selects the correct track.\n- Assigned names persist while tracking is active.",
     "labels": ["phase-3", "area:backend", "area:frontend", "type:feature"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-27"
   },
   {
     "title": "[Phase 4] Karaoke Engine (Standalone)",
     "body": "Goal:\n- Implement karaoke playback and lyric timing without CV dependencies.\n\nScope:\n- In scope: LRC parsing, audio playback, lyric timing/highlighting, play/pause/restart.\n- Out of scope: face integration.\n\nAcceptance Criteria:\n- LRC file is parsed correctly.\n- Lyrics change at correct timestamps.\n- Playback controls work as expected.",
     "labels": ["phase-4", "area:frontend", "type:feature"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-27"
   },
   {
     "title": "[Phase 5] Karaoke Integrated with Live Faces",
     "body": "Goal:\n- Bind karaoke lyrics to tracked faces and render them in the overlay.\n\nScope:\n- In scope: assign song to person, render lyrics above face, sync audio and overlay.\n- Out of scope: advanced UI polish.\n\nAcceptance Criteria:\n- Lyrics follow the correct tracked face.\n- Audio playback and lyric display remain synchronized.\n- End-to-end flow works locally.",
     "labels": ["phase-5", "area:frontend", "area:backend", "type:feature"],
     "assignee": "",
-    "created": true
+    "created": true,
+    "closed": true,
+    "closed_on": "2026-02-27"
   },
   {
     "title": "[Phase 6] Metrics, Evaluation & Polishing",
@@ -42,5 +52,53 @@
     "created": true,
     "closed": true,
     "closed_on": "2026-02-20"
+  },
+  {
+    "title": "[Post-MVP] Songs & Media Management",
+    "body": "Goal:\n- Add support for multiple songs and media asset management.\n\nScope:\n- In scope: song list, metadata, selectable tracks, basic import conventions.\n- Out of scope: licensing and online catalogs.\n\nAcceptance Criteria:\n- At least 3 songs can be managed and selected in UI.\n- Each song links to audio + LRC data reliably.\n- Missing assets are handled with clear error states.",
+    "labels": ["post-mvp", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 7
+  },
+  {
+    "title": "[Post-MVP] UI/UX Polish Pass",
+    "body": "Goal:\n- Improve readability, layout quality, and interaction clarity in the frontend.\n\nScope:\n- In scope: spacing, typography, responsive tuning, panel hierarchy, status feedback.\n- Out of scope: complete redesign.\n\nAcceptance Criteria:\n- UI remains usable on desktop and mobile breakpoints.\n- Karaoke controls and metrics are clearly readable.\n- Error and reconnect states are visually explicit.",
+    "labels": ["post-mvp", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 8
+  },
+  {
+    "title": "[Post-MVP] Cloud Deployment Baseline",
+    "body": "Goal:\n- Define and implement a basic deploy path for frontend and backend.\n\nScope:\n- In scope: frontend static hosting, backend runtime target, env config, deployment docs.\n- Out of scope: autoscaling and production SRE setup.\n\nAcceptance Criteria:\n- Frontend deploy target is reproducible from CI.\n- Backend deploy target and start command are documented.\n- End-to-end smoke test works on deployed URLs.",
+    "labels": ["post-mvp", "area:backend", "area:docs", "type:chore"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 9
+  },
+  {
+    "title": "[Post-MVP] Persistent Face Recognition Across Sessions",
+    "body": "Goal:\n- Re-identify known users across sessions with explicit consent and privacy notes.\n\nScope:\n- In scope: embedding pipeline, local identity store, opt-in management flow.\n- Out of scope: cloud identity sync.\n\nAcceptance Criteria:\n- Known users can be re-identified after restart.\n- Unknown users remain unassigned until user confirmation.\n- Privacy/retention behavior is documented.",
+    "labels": ["post-mvp", "area:backend", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 10
+  },
+  {
+    "title": "[Post-MVP] Performance Optimization Pass",
+    "body": "Goal:\n- Improve runtime stability and reduce latency under realistic webcam usage.\n\nScope:\n- In scope: profiling, frame pacing strategy, backend inference frequency tuning, rendering optimization.\n- Out of scope: multi-node scaling.\n\nAcceptance Criteria:\n- Measured latency/FPS improve against current baseline.\n- No regression in detection/tracking behavior.\n- Updated measurements are documented.",
+    "labels": ["post-mvp", "area:backend", "area:frontend", "type:feature"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 11
+  },
+  {
+    "title": "[Post-MVP] Accessory Drawing & Face Anchoring",
+    "body": "Goal:\n- Allow drawing simple accessories and anchor them to heads/faces in live view.\n\nScope:\n- In scope: draw tool basics, anchor strategy, transform updates per frame.\n- Out of scope: full AR pipeline.\n\nAcceptance Criteria:\n- User can draw at least one accessory shape.\n- Accessory follows a selected face/head with acceptable stability.\n- Feature can be toggled on/off without breaking core flow.",
+    "labels": ["post-mvp", "area:frontend", "area:backend", "type:feature"],
+    "assignee": "",
+    "created": true,
+    "issue_number": 12
   }
 ]

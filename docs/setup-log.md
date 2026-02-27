@@ -204,3 +204,12 @@ Schritte (steps):
 3. `docs/roadmap.md` auf "Phase 0-6 Completed" gesetzt und Completion-Criteria aktualisiert.
 4. GitHub-Issue fuer Phase 6 zur Schliessung vorbereitet.
 
+## 2026-02-27 — Entry 026: Post-MVP Backlog Refinement
+
+Schritte (steps):
+
+1. Neues Label `post-mvp` in GitHub angelegt.
+2. Bestehende, umgesetzte Phasen-Issues `#1` bis `#5` auf GitHub geschlossen.
+3. Sechs neue Post-MVP-Issues `#7` bis `#12` auf GitHub erstellt.
+4. `docs/issues.json` mit Closure-Status fuer Phase 1-5 sowie neuen Post-MVP-Issues synchronisiert.
+
