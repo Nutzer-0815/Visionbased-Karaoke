@@ -697,6 +697,25 @@ function App() {
 
       ctx.strokeRect(x, y, w, h);
       ctx.fillText(`${trackLabel} ${box.conf.toFixed(2)}`, x + 4, y + 16);
+
+      const lyricText = songByTrack[box.track_id] === DEMO_SONG_ID && activeLine >= 0
+        ? (karaokeLines[activeLine]?.text ?? '')
+        : '';
+      if (lyricText) {
+        const lyricFontSize = 18;
+        ctx.font = `bold ${lyricFontSize}px "Space Grotesk", sans-serif`;
+        const textMetrics = ctx.measureText(lyricText);
+        const textW = textMetrics.width;
+        const padding = 6;
+        const bgX = x + w / 2 - textW / 2 - padding;
+        const bgY = y - lyricFontSize - padding * 2;
+        const bgW = textW + padding * 2;
+        const bgH = lyricFontSize + padding;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+        ctx.fillRect(bgX, Math.max(0, bgY), bgW, bgH);
+        ctx.fillStyle = '#facc15';
+        ctx.fillText(lyricText, x + w / 2 - textW / 2, Math.max(lyricFontSize, y - padding));
+      }
     });
     const renderEnd = performance.now();
     const renderMs = renderEnd - renderStart;
@@ -713,7 +732,7 @@ function App() {
       sessionRef.current.frontendOverlayFps = addSample(sessionRef.current.frontendOverlayFps, overlayFps);
     }
     refreshSessionMetrics();
-  }, [detections, frameSize, names, selectedTrackId, refreshSessionMetrics]);
+  }, [detections, frameSize, names, selectedTrackId, songByTrack, activeLine, karaokeLines, refreshSessionMetrics]);
 
   useEffect(() => {
     let rafId = 0;
