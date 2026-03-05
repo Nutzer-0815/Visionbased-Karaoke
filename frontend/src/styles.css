@@ -168,7 +168,7 @@ body {
 }
 
 .name-editor input {
-  border: 1px solid #cbd5f5;
+  border: 1px solid #cbd5e1;
   border-radius: 10px;
   padding: 8px 10px;
   font-size: 14px;
@@ -202,7 +202,7 @@ button.primary:hover:not(:disabled) {
 button.ghost {
   background: #ffffff;
   color: #0f172a;
-  border: 1px solid #cbd5f5;
+  border: 1px solid #cbd5e1;
 }
 
 .error {

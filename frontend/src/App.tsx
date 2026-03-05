@@ -9,6 +9,7 @@ const LRC_URL = '/lyrics/demo.lrc';
 const DEMO_SONG_ID = 'demo-song';
 const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
 const WS_RECONNECT_DELAY_MS = 1500;
+const WS_MAX_RECONNECT_ATTEMPTS = 10;
 
 type Detection = {
   x1: number;
@@ -397,6 +398,11 @@ function App() {
           return;
         }
         reconnectAttemptsRef.current += 1;
+        if (reconnectAttemptsRef.current > WS_MAX_RECONNECT_ATTEMPTS) {
+          setWsStatus('disconnected');
+          setWsError('Backend nicht erreichbar. Bitte Backend starten und Webcam neu starten.');
+          return;
+        }
         setWsStatus('connecting');
         setWsError(`Backend getrennt. Reconnect #${reconnectAttemptsRef.current}...`);
         reconnectTimer = window.setTimeout(connect, WS_RECONNECT_DELAY_MS);
@@ -711,10 +717,11 @@ function App() {
         const bgY = y - lyricFontSize - padding * 2;
         const bgW = textW + padding * 2;
         const bgH = lyricFontSize + padding;
+        const clampedBgX = Math.max(0, Math.min(canvas.width - bgW, bgX));
         ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-        ctx.fillRect(bgX, Math.max(0, bgY), bgW, bgH);
+        ctx.fillRect(clampedBgX, Math.max(0, bgY), bgW, bgH);
         ctx.fillStyle = '#facc15';
-        ctx.fillText(lyricText, x + w / 2 - textW / 2, Math.max(lyricFontSize, y - padding));
+        ctx.fillText(lyricText, clampedBgX + padding, Math.max(lyricFontSize, y - padding));
       }
     });
     const renderEnd = performance.now();
