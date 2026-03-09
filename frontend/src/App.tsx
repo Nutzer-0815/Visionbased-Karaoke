@@ -505,34 +505,19 @@ function App() {
   useEffect(() => {
     const intervalId = window.setInterval(() => {
       const now = Date.now();
-      if (selectedTrackId === null) {
-        setSongByTrack((prev) => {
-          let changed = false;
-          const next = { ...prev };
-          Object.keys(prev).forEach((trackIdRaw) => {
-            const trackId = Number(trackIdRaw);
-            const lastSeen = lastSeenRef.current[trackId];
-            if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
-              delete next[trackId];
-              changed = true;
-            }
-          });
-          return changed ? next : prev;
-        });
-        return;
+      if (selectedTrackId !== null) {
+        const lastSeen = lastSeenRef.current[selectedTrackId];
+        if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
+          setSelectedTrackId(null);
+        }
       }
-      const lastSeen = lastSeenRef.current[selectedTrackId];
-      if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
-        setSelectedTrackId(null);
-      }
-
       setSongByTrack((prev) => {
         let changed = false;
         const next = { ...prev };
         Object.keys(prev).forEach((trackIdRaw) => {
           const trackId = Number(trackIdRaw);
-          const trackLastSeen = lastSeenRef.current[trackId];
-          if (!trackLastSeen || now - trackLastSeen > TRACK_STALE_MS) {
+          const lastSeen = lastSeenRef.current[trackId];
+          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
             delete next[trackId];
             changed = true;
           }

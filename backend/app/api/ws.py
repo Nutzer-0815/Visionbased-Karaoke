@@ -17,7 +17,19 @@ MAX_FRAME_B64_LEN = int(os.getenv("MAX_FRAME_B64_LEN", "2500000"))
 CONF_THRESHOLD = float(os.getenv("CONF_THRESHOLD", "0.3"))
 TRACK_IOU_THRESHOLD = float(os.getenv("TRACK_IOU_THRESHOLD", "0.3"))
 TRACK_MAX_MISSED = int(os.getenv("TRACK_MAX_MISSED", "5"))
-model = YOLO(MODEL_NAME)
+model: YOLO | None = None
+
+
+def load_model() -> None:
+    global model
+    try:
+        model = YOLO(MODEL_NAME)
+    except Exception as exc:
+        raise RuntimeError(
+            f"YOLO-Modell '{MODEL_NAME}' konnte nicht geladen werden. "
+            "Bitte die Modelldatei herunterladen und im Backend-Verzeichnis ablegen. "
+            f"Details: {exc}"
+        ) from exc
 
 
 class Detection(TypedDict):
@@ -140,6 +152,11 @@ def assign_tracks(
 @router.websocket("/stream")
 async def websocket_stream(websocket: WebSocket) -> None:
     await websocket.accept()
+
+    if model is None:
+        await websocket.send_json({"type": "error", "message": "Modell nicht geladen. Backend neu starten."})
+        await websocket.close()
+        return
 
     tracks: list[Track] = []
     next_track_id = 1
