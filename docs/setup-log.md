@@ -270,3 +270,10 @@ Schritte (steps):
 4. `frontend/public/lyrics/song3.lrc`: Techno Traum Placeholder-Lyrics (10 Zeilen, 4s-Intervall, 40s).
 5. `frontend/src/karaoke/songs.ts` erstellt: `Song`-Typ, `loadSongCatalog()` (fetch + Validierung), `resolveAudioUrl()` (loest `generated:happy-birthday` auf).
 6. `frontend/src/App.tsx`: Multi-Song-Support implementiert. Song-Katalog wird beim Mount geladen. Song-Dropdown im UI statt hardcoded Demo-Song. `loadSong(song)` laedt LRC und Audio dynamisch. `activeSongId` steuert Canvas-Lyric-Rendering.
+
+## 2026-03-12 — Entry 034: Issue #8 UI/UX Polish Pass
+
+Schritte (steps):
+
+1. `frontend/src/styles.css`: `.status.connecting` neu (amber statt rot). Pulse-Animation fuer connecting-Dot. `select`-Element styled passend zu inputs. `.error-banner` als prominenter Fehler-Banner. `.editor-row`/`.editor-divider` fuer Name-Editor. Karaoke-Zeile mit linker Akzentlinie + soft background. Scrollbar-Styling. 3 Breakpoints: 480px (mobile padding, 1-col), 640px (2-col metrics), 900px (bestehend). Metrics-Panel collapsible (Header + Toggle-Button).
+2. `frontend/src/App.tsx`: `wsStatus connecting` korrekt als CSS-Klasse `connecting` gesetzt. `wsError` als `.error-banner` statt inline-span. Metriken einklappbar via `metricsOpen`-State. Name-Editor in zwei `editor-row` unterteilt (Name-Zeile + Song-Zeile mit Divider).

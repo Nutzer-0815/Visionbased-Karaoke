@@ -216,6 +216,8 @@ function App() {
     frontendOverlayFps: null,
     frontendRenderMs: null,
   });
+  const [metricsOpen, setMetricsOpen] = useState(false);
+
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
     samples: 0,
     durationSec: 0,
@@ -861,7 +863,7 @@ function App() {
             <span className="dot" />
             <span>{stream ? 'Webcam aktiv' : 'Webcam inaktiv'}</span>
           </div>
-          <div className={`status ${wsStatus === 'connected' ? 'on' : 'off'}`}>
+          <div className={`status ${wsStatus === 'connected' ? 'on' : wsStatus === 'connecting' ? 'connecting' : 'off'}`}>
             <span className="dot" />
             <span>
               {wsStatus === 'connected'
@@ -882,11 +884,16 @@ function App() {
           Stop Webcam
         </button>
         {error && <span className="error">{error}</span>}
-        {wsError && <span className="error">{wsError}</span>}
+        {wsError && <div className="error-banner">{wsError}</div>}
       </section>
 
       <section className="metrics-panel">
-        <h2>Runtime Metrics</h2>
+        <div className="metrics-header" onClick={() => setMetricsOpen((o) => !o)}>
+          <h2>Runtime Metrics</h2>
+          <span className="metrics-toggle">{metricsOpen ? '▲ Einklappen' : '▼ Anzeigen'}</span>
+        </div>
+        {metricsOpen && (
+        <div className="metrics-body">
         <div className="metrics-actions">
           <button className="ghost" onClick={exportMetrics}>
             Export Metrics JSON
@@ -955,54 +962,61 @@ function App() {
             <strong>{sessionMetrics.maxBufferedKb.toFixed(1)} KB</strong>
           </div>
         </div>
+        </div>
+        )}
       </section>
 
       <section className="controls">
         <div className="name-editor">
-          <span className="name-label">{selectedLabel}</span>
-          <input
-            type="text"
-            placeholder="Name eingeben"
-            value={nameInput}
-            onChange={(event) => setNameInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                saveName();
-              }
-            }}
-            disabled={selectedTrackId === null}
-          />
-          <button className="ghost" onClick={saveName} disabled={selectedTrackId === null}>
-            Name speichern
-          </button>
-          <span className="name-label">
-            {selectedTrackId === null
-              ? 'Song: -'
-              : isSelectedAssigned
-                ? `Song: ${assignedSongTitle}`
-                : 'Song: nicht zugeordnet'}
-          </span>
-          <select
-            value={selectedSongId}
-            onChange={(e) => setSelectedSongId(e.target.value)}
-            disabled={selectedTrackId === null || songs.length === 0}
-          >
-            {songs.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.title}
-              </option>
-            ))}
-          </select>
-          <button className="ghost" onClick={assignSong} disabled={selectedTrackId === null || !selectedSongId}>
-            Song zuordnen
-          </button>
-          <button
-            className="ghost"
-            onClick={clearSongAssignment}
-            disabled={selectedTrackId === null || !isSelectedAssigned}
-          >
-            Song entfernen
-          </button>
+          <div className="editor-row">
+            <span className="name-label">{selectedLabel}</span>
+            <input
+              type="text"
+              placeholder="Name eingeben"
+              value={nameInput}
+              onChange={(event) => setNameInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  saveName();
+                }
+              }}
+              disabled={selectedTrackId === null}
+            />
+            <button className="ghost" onClick={saveName} disabled={selectedTrackId === null}>
+              Name speichern
+            </button>
+          </div>
+          <div className="editor-divider" />
+          <div className="editor-row">
+            <span className="name-label">
+              {selectedTrackId === null
+                ? 'Song: —'
+                : isSelectedAssigned
+                  ? `Song: ${assignedSongTitle}`
+                  : 'Song: nicht zugeordnet'}
+            </span>
+            <select
+              value={selectedSongId}
+              onChange={(e) => setSelectedSongId(e.target.value)}
+              disabled={selectedTrackId === null || songs.length === 0}
+            >
+              {songs.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+            <button className="ghost" onClick={assignSong} disabled={selectedTrackId === null || !selectedSongId}>
+              Zuordnen
+            </button>
+            <button
+              className="ghost"
+              onClick={clearSongAssignment}
+              disabled={selectedTrackId === null || !isSelectedAssigned}
+            >
+              Entfernen
+            </button>
+          </div>
         </div>
       </section>
 
