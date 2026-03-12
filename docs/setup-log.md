@@ -245,6 +245,13 @@ Schritte (steps):
 
 1. `frontend/src/App.tsx`: Track-Label wird nicht mehr als kleiner Text in der Bounding Box gezeichnet, sondern als farbiges Badge direkt oberhalb der Box (gleiche Farbe wie Rahmen: gruen/orange, weisser Text, geclampt an Canvas-Raendern).
 
+## 2026-03-12 — Entry 032: README aktualisiert
+
+Schritte (steps):
+
+1. `README.md`: Projektbeschreibung auf MVP-Abschluss aktualisiert, Feature-Liste, Quickstart mit Modell-Download-Anleitung (Option A: face-Modell, Option B: yolov8n.pt Auto-Download), Nutzungsanleitung und Projektstruktur ergaenzt.
+2. `backend/README.md`: Modell-Setup-Abschnitt mit Umgebungsvariablen-Tabelle ergaenzt.
+
 ## 2026-03-12 — Entry 031: Docs auf aktuellen Stand gebracht
 
 Schritte (steps):
