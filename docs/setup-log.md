@@ -277,3 +277,15 @@ Schritte (steps):
 
 1. `frontend/src/styles.css`: `.status.connecting` neu (amber statt rot). Pulse-Animation fuer connecting-Dot. `select`-Element styled passend zu inputs. `.error-banner` als prominenter Fehler-Banner. `.editor-row`/`.editor-divider` fuer Name-Editor. Karaoke-Zeile mit linker Akzentlinie + soft background. Scrollbar-Styling. 3 Breakpoints: 480px (mobile padding, 1-col), 640px (2-col metrics), 900px (bestehend). Metrics-Panel collapsible (Header + Toggle-Button).
 2. `frontend/src/App.tsx`: `wsStatus connecting` korrekt als CSS-Klasse `connecting` gesetzt. `wsError` als `.error-banner` statt inline-span. Metriken einklappbar via `metricsOpen`-State. Name-Editor in zwei `editor-row` unterteilt (Name-Zeile + Song-Zeile mit Divider).
+
+## 2026-03-12 — Entry 035: Issue #9 Cloud Deployment Baseline
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: `WS_URL` aus `import.meta.env.VITE_WS_URL` gelesen (Fallback auf localhost); konfigurierbar fuer Cloud-Deployments.
+2. `frontend/.env.example`: Dokumentiert `VITE_WS_URL` fuer lokale und Cloud-Umgebungen.
+3. `backend/Dockerfile`: python:3.12-slim, OpenCV-System-Abhaengigkeiten, uvicorn CMD; Modell-Datei wird nicht gebundelt.
+4. `backend/.env.example`: Alle Backend-Umgebungsvariablen mit Standardwerten dokumentiert.
+5. `docker-compose.yml`: Backend-Service mit env_file und Volume-Mount fuer Modell-Dateien.
+6. `.github/workflows/ci.yml`: Frontend-Build-Artefakt (`frontend-dist`) wird nach erfolgreichem Build fuer 7 Tage hochgeladen.
+7. `docs/deployment.md`: Vollstaendige Deployment-Anleitung fuer Vercel (Frontend), Docker/Railway/Fly.io (Backend), Modell-Setup und Umgebungsvariablen.

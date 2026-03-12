@@ -3,7 +3,7 @@ import { generateSineWavDataUrl } from './karaoke/audio';
 import { parseLrc, type LrcLine } from './karaoke/lrc';
 import { type Song, loadSongCatalog, resolveAudioUrl } from './karaoke/songs';
 
-const WS_URL = 'ws://localhost:8000/ws/stream';
+const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
 const TRACK_STALE_MS = 2000;
 const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
