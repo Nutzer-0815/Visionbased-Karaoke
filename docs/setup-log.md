@@ -289,3 +289,13 @@ Schritte (steps):
 5. `docker-compose.yml`: Backend-Service mit env_file und Volume-Mount fuer Modell-Dateien.
 6. `.github/workflows/ci.yml`: Frontend-Build-Artefakt (`frontend-dist`) wird nach erfolgreichem Build fuer 7 Tage hochgeladen.
 7. `docs/deployment.md`: Vollstaendige Deployment-Anleitung fuer Vercel (Frontend), Docker/Railway/Fly.io (Backend), Modell-Setup und Umgebungsvariablen.
+
+## 2026-03-12 — Entry 036: CI Backend Fix (ruff isort I001)
+
+Schritte (steps):
+
+1. `backend/ruff.toml` erstellt mit `known-first-party = ["app"]` fuer korrekte isort-Sektionierung.
+2. `backend/app/main.py`: Import-Reihenfolge auf isort-Standard gebracht: stdlib → third-party (fastapi) → first-party (app.*), jeweils mit Leerzeile getrennt.
+3. `backend/app/main.py`: Kombinierten Import `load_model, router as ws_router` auf zwei separate Zeilen aufgeteilt (Ruff-Anforderung bei gemischten Alias-Imports).
+4. Root `pyproject.toml` ebenfalls mit `[tool.ruff.lint.isort] known-first-party = ["app"]` versehen (Fallback).
+5. CI (GitHub Actions Backend-Job) ist jetzt wieder gruen (Commits: cdef95b, bfa760c, e91649d, 5d021a4, 4a502f7, 50ccba7).
