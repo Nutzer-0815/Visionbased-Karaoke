@@ -259,3 +259,14 @@ Schritte (steps):
 1. `docs/adr/0005-phase5-song-assignment.md`: Decision-Abschnitt von "fixed banner" auf canvas-gebundenes Lyric-Rendering ueber der Bounding Box aktualisiert.
 2. `docs/tradeoffs.md`: Trade-off #4 von "fixed lyric banner" auf "face-anchored canvas rendering" korrigiert.
 
+
+## 2026-03-12 — Entry 033: Issue #7 Songs & Media Management (Schritt 1–4)
+
+Schritte (steps):
+
+1. `frontend/public/songs/index.json` erstellt: Song-Katalog mit drei Eintraegen (demo-song, song-2 Happy Birthday, song-3 Techno Traum).
+2. `frontend/src/karaoke/audio.ts`: `generateMelodyDataUrl(notes, sampleRate, volume)` und `generateHappyBirthdayDataUrl()` hinzugefuegt. Happy Birthday Melodie (BPM 80, C-Dur, ~22s, public domain seit 2016) als Note-Array mit 10 ms Fade-In/Out pro Note.
+3. `frontend/public/lyrics/song2.lrc`: Happy Birthday Lyrics synchronisiert mit der generierten Melodie (4 Zeilen, Timestamps: 0:00, 0:05.25, 0:10.50, 0:16.50).
+4. `frontend/public/lyrics/song3.lrc`: Techno Traum Placeholder-Lyrics (10 Zeilen, 4s-Intervall, 40s).
+5. `frontend/src/karaoke/songs.ts` erstellt: `Song`-Typ, `loadSongCatalog()` (fetch + Validierung), `resolveAudioUrl()` (loest `generated:happy-birthday` auf).
+6. `frontend/src/App.tsx`: Multi-Song-Support implementiert. Song-Katalog wird beim Mount geladen. Song-Dropdown im UI statt hardcoded Demo-Song. `loadSong(song)` laedt LRC und Audio dynamisch. `activeSongId` steuert Canvas-Lyric-Rendering.

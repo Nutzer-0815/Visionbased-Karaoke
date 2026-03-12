@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateSineWavDataUrl } from './karaoke/audio';
 import { parseLrc, type LrcLine } from './karaoke/lrc';
+import { type Song, loadSongCatalog, resolveAudioUrl } from './karaoke/songs';
 
 const WS_URL = 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
 const TRACK_STALE_MS = 2000;
-const LRC_URL = '/lyrics/demo.lrc';
-const DEMO_SONG_ID = 'demo-song';
 const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
 const WS_RECONNECT_DELAY_MS = 1500;
 const WS_MAX_RECONNECT_ATTEMPTS = 10;
@@ -174,7 +173,7 @@ const isErrorMessage = (value: unknown): value is ErrorMessage =>
 const COPY = {
   title: 'Face Karaoke AI',
   subtitle: 'Live Face Tracking + Karaoke Overlay (React + Vite + TypeScript)',
-  hint: 'Klicke ein Gesicht an, vergebe einen Namen und ordne den Demo-Song zu.',
+  hint: 'Klicke ein Gesicht an, vergebe einen Namen und ordne einen Song zu.',
 };
 
 function App() {
@@ -201,6 +200,9 @@ function App() {
   const [names, setNames] = useState<Record<number, string>>({});
   const [nameInput, setNameInput] = useState('');
   const [songByTrack, setSongByTrack] = useState<Record<number, string>>({});
+  const [songs, setSongs] = useState<Song[]>([]);
+  const [selectedSongId, setSelectedSongId] = useState<string>('');
+  const [activeSongId, setActiveSongId] = useState<string | null>(null);
   const [karaokeLines, setKaraokeLines] = useState<LrcLine[]>([]);
   const [activeLine, setActiveLine] = useState<number>(-1);
   const [audioSrc, setAudioSrc] = useState<string | null>(null);
@@ -265,6 +267,24 @@ function App() {
       droppedFrames: 0,
       maxBufferedKb: 0,
     });
+  }, []);
+
+  // Loads LRC and audio for a song, sets it as the active song in the player.
+  const loadSong = useCallback(async (song: Song) => {
+    try {
+      const response = await fetch(song.lrcUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      setKaraokeLines(parseLrc(text));
+      setKaraokeError(null);
+    } catch {
+      setKaraokeError('Lyrics konnten nicht geladen werden.');
+      setKaraokeLines([]);
+    }
+    const resolvedUrl = resolveAudioUrl(song);
+    setAudioSrc(resolvedUrl ?? generateSineWavDataUrl({ durationSec: 60 }));
+    setActiveSongId(song.id);
+    setActiveLine(-1);
   }, []);
 
   const disconnectSocket = useCallback(() => {
@@ -486,21 +506,19 @@ function App() {
     setNameInput(names[selectedTrackId] ?? '');
   }, [selectedTrackId, names]);
 
+  // Load song catalog on mount and pre-load the first song.
   useEffect(() => {
-    const loadLrc = async () => {
-      try {
-        const response = await fetch(LRC_URL);
-        const text = await response.text();
-        setKaraokeLines(parseLrc(text));
-        setKaraokeError(null);
-      } catch (err) {
-        console.error(err);
-        setKaraokeError('Lyrics konnten nicht geladen werden.');
-      }
-    };
-    loadLrc();
-    setAudioSrc(generateSineWavDataUrl());
-  }, []);
+    loadSongCatalog()
+      .then((catalog) => {
+        setSongs(catalog);
+        const first = catalog[0];
+        if (first) {
+          setSelectedSongId(first.id);
+          return loadSong(first);
+        }
+      })
+      .catch(() => setKaraokeError('Song-Katalog konnte nicht geladen werden.'));
+  }, [loadSong]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -547,12 +565,16 @@ function App() {
     });
   }, [selectedTrackId, nameInput]);
 
-  const assignDemoSong = useCallback(() => {
-    if (selectedTrackId === null) {
+  const assignSong = useCallback(async () => {
+    if (selectedTrackId === null || !selectedSongId) {
       return;
     }
-    setSongByTrack((prev) => ({ ...prev, [selectedTrackId]: DEMO_SONG_ID }));
-  }, [selectedTrackId]);
+    setSongByTrack((prev) => ({ ...prev, [selectedTrackId]: selectedSongId }));
+    const song = songs.find((s) => s.id === selectedSongId);
+    if (song) {
+      await loadSong(song);
+    }
+  }, [selectedTrackId, selectedSongId, songs, loadSong]);
 
   const clearSongAssignment = useCallback(() => {
     if (selectedTrackId === null) {
@@ -702,9 +724,12 @@ function App() {
       ctx.fillStyle = '#ffffff';
       ctx.fillText(labelText, labelX + labelPad, labelY + labelFontSize);
 
-      const lyricText = songByTrack[box.track_id] === DEMO_SONG_ID && activeLine >= 0
-        ? (karaokeLines[activeLine]?.text ?? '')
-        : '';
+      const lyricText =
+        activeSongId !== null &&
+        songByTrack[box.track_id] === activeSongId &&
+        activeLine >= 0
+          ? (karaokeLines[activeLine]?.text ?? '')
+          : '';
       if (lyricText) {
         const lyricFontSize = 18;
         ctx.font = `bold ${lyricFontSize}px "Space Grotesk", sans-serif`;
@@ -737,7 +762,7 @@ function App() {
       sessionRef.current.frontendOverlayFps = addSample(sessionRef.current.frontendOverlayFps, overlayFps);
     }
     refreshSessionMetrics();
-  }, [detections, frameSize, names, selectedTrackId, songByTrack, activeLine, karaokeLines, refreshSessionMetrics]);
+  }, [detections, frameSize, names, selectedTrackId, songByTrack, activeLine, karaokeLines, activeSongId, refreshSessionMetrics]);
 
   useEffect(() => {
     let rafId = 0;
@@ -785,8 +810,11 @@ function App() {
       : names[selectedTrackId]
         ? `${names[selectedTrackId]} (#${selectedTrackId})`
         : `#${selectedTrackId}`;
-  const isSelectedAssigned =
-    selectedTrackId !== null && songByTrack[selectedTrackId] === DEMO_SONG_ID;
+  const assignedSongId = selectedTrackId !== null ? songByTrack[selectedTrackId] : undefined;
+  const isSelectedAssigned = !!assignedSongId;
+  const assignedSongTitle = assignedSongId
+    ? (songs.find((s) => s.id === assignedSongId)?.title ?? assignedSongId)
+    : null;
   const assignedCount = Object.keys(songByTrack).length;
   const hasAssignedSong = assignedCount > 0;
   const activeLyricText = activeLine >= 0 ? karaokeLines[activeLine]?.text ?? '' : '';
@@ -951,10 +979,21 @@ function App() {
             {selectedTrackId === null
               ? 'Song: -'
               : isSelectedAssigned
-                ? 'Song: Demo zugeordnet'
+                ? `Song: ${assignedSongTitle}`
                 : 'Song: nicht zugeordnet'}
           </span>
-          <button className="ghost" onClick={assignDemoSong} disabled={selectedTrackId === null}>
+          <select
+            value={selectedSongId}
+            onChange={(e) => setSelectedSongId(e.target.value)}
+            disabled={selectedTrackId === null || songs.length === 0}
+          >
+            {songs.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+          <button className="ghost" onClick={assignSong} disabled={selectedTrackId === null || !selectedSongId}>
             Song zuordnen
           </button>
           <button
@@ -978,7 +1017,13 @@ function App() {
       <section className="karaoke">
         <div className="karaoke-controls">
           <h2>Karaoke</h2>
-          <p className="song-summary">Zugeordnete Tracks: {assignedCount}</p>
+          <p className="song-summary">
+            {activeSongId
+              ? `Geladen: ${songs.find((s) => s.id === activeSongId)?.title ?? activeSongId}`
+              : 'Kein Song geladen'}
+            {' — '}
+            Zugeordnete Tracks: {assignedCount}
+          </p>
           <div className="karaoke-buttons">
             <button
               className="primary"

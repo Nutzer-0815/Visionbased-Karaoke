@@ -1,0 +1,20 @@
+[
+  {
+    "id": "demo-song",
+    "title": "Face Karaoke Demo",
+    "lrcUrl": "/lyrics/demo.lrc",
+    "audioUrl": null
+  },
+  {
+    "id": "song-2",
+    "title": "Happy Birthday",
+    "lrcUrl": "/lyrics/song2.lrc",
+    "audioUrl": "generated:happy-birthday"
+  },
+  {
+    "id": "song-3",
+    "title": "Techno Traum",
+    "lrcUrl": "/lyrics/song3.lrc",
+    "audioUrl": null
+  }
+]
