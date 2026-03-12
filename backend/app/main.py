@@ -2,11 +2,12 @@
 
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.api.ws import load_model, router as ws_router
 from app.core.config import load_settings
 from app.core.logging import configure_logging, get_logger
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 settings = load_settings()
 configure_logging(settings.log_level)
