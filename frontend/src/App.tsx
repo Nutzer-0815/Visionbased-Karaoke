@@ -687,7 +687,20 @@ function App() {
       const h = (box.y2 - box.y1) * scaleY;
 
       ctx.strokeRect(x, y, w, h);
-      ctx.fillText(`${trackLabel} ${box.conf.toFixed(2)}`, x + 4, y + 16);
+
+      const labelText = `${trackLabel}  ${box.conf.toFixed(2)}`;
+      const labelFontSize = 13;
+      ctx.font = `600 ${labelFontSize}px "Space Grotesk", sans-serif`;
+      const labelMetrics = ctx.measureText(labelText);
+      const labelPad = 5;
+      const labelW = labelMetrics.width + labelPad * 2;
+      const labelH = labelFontSize + labelPad;
+      const labelX = Math.max(0, Math.min(canvas.width - labelW, x));
+      const labelY = Math.max(0, y - labelH);
+      ctx.fillStyle = isSelected ? '#f97316' : '#22c55e';
+      ctx.fillRect(labelX, labelY, labelW, labelH);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(labelText, labelX + labelPad, labelY + labelFontSize);
 
       const lyricText = songByTrack[box.track_id] === DEMO_SONG_ID && activeLine >= 0
         ? (karaokeLines[activeLine]?.text ?? '')

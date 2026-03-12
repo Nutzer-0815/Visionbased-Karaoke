@@ -213,3 +213,42 @@ Schritte (steps):
 3. Sechs neue Post-MVP-Issues `#7` bis `#12` auf GitHub erstellt.
 4. `docs/issues.json` mit Closure-Status fuer Phase 1-5 sowie neuen Post-MVP-Issues synchronisiert.
 
+## 2026-03-12 — Entry 027: Karaoke-Lyrics auf Canvas + demo.lrc
+
+Schritte (steps):
+
+1. `frontend/public/lyrics/demo.lrc` mit 20 deutschen Lyric-Zeilen (3s-Intervall, 57s Laufzeit) erstellt.
+2. `frontend/src/App.tsx`: Karaoke-Lyrics werden jetzt direkt auf dem Canvas ueber der Bounding Box des zugeordneten Gesichts gerendert (gelb, fett, 18px, halbtransparenter schwarzer Hintergrund).
+3. Canvas-Render-useEffect-Dependencies um `songByTrack`, `activeLine`, `karaokeLines` ergaenzt.
+
+## 2026-03-12 — Entry 028: Code Review Fixes (Frontend)
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: Lyric-Text-X-Position auf Canvas geclampt (`Math.max(0, Math.min(canvas.width - bgW, bgX))`), um Ueberlauf am Rand zu verhindern.
+2. `frontend/src/styles.css`: Tippfehler `#cbd5f5` auf korrektes Slate-300 `#cbd5e1` in `.name-editor input` und `.ghost`-Button korrigiert (beide Vorkommen).
+3. `frontend/src/App.tsx`: `WS_MAX_RECONNECT_ATTEMPTS = 10` eingefuehrt; Reconnect-Loop stoppt nach 10 Versuchen mit klarer Fehlermeldung.
+
+## 2026-03-12 — Entry 029: Code Review Fixes (Backend + Frontend)
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: Duplizierten `setSongByTrack`-Block im Stale-Track-Cleanup-Interval entfernt; Logik laeuft jetzt einmal pro Tick unabhaengig von `selectedTrackId`.
+2. `backend/app/api/ws.py`: YOLO-Modell wird nicht mehr beim Modulimport geladen. Neue Funktion `load_model()` mit klarer `RuntimeError`-Meldung bei fehlender Modelldatei.
+3. `backend/app/api/ws.py`: WebSocket-Handler prueft `model is None` und sendet Fehlermeldung ans Frontend, statt zu crashen.
+4. `backend/app/main.py`: FastAPI-`lifespan`-Hook eingefuehrt; `load_model()` wird beim Server-Start aufgerufen mit Log-Ausgabe.
+5. `frontend/src/karaoke/audio.ts`: O(n²) String-Concatenation durch Chunk-basierte Verarbeitung (8192 Bytes/Chunk) ersetzt.
+
+## 2026-03-12 — Entry 030: Name-Badge prominent auf Canvas
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: Track-Label wird nicht mehr als kleiner Text in der Bounding Box gezeichnet, sondern als farbiges Badge direkt oberhalb der Box (gleiche Farbe wie Rahmen: gruen/orange, weisser Text, geclampt an Canvas-Raendern).
+
+## 2026-03-12 — Entry 031: Docs auf aktuellen Stand gebracht
+
+Schritte (steps):
+
+1. `docs/adr/0005-phase5-song-assignment.md`: Decision-Abschnitt von "fixed banner" auf canvas-gebundenes Lyric-Rendering ueber der Bounding Box aktualisiert.
+2. `docs/tradeoffs.md`: Trade-off #4 von "fixed lyric banner" auf "face-anchored canvas rendering" korrigiert.
+

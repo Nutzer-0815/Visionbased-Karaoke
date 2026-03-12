@@ -23,6 +23,6 @@ Status: Draft
 
 ## 4) Lyric Placement Strategy
 
-- Choice: fixed lyric banner in the upper fifth of the viewport.
-- Benefit: stable readability independent of face box movement.
-- Cost: lyrics are not person-anchored in the rendered video space.
+- Choice: lyrics rendered on canvas directly above the assigned face bounding box.
+- Benefit: lyrics are person-anchored and visually tied to the correct face.
+- Cost: readability decreases if face is near the canvas edge or moves rapidly.

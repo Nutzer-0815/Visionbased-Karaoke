@@ -14,11 +14,12 @@ the frontend:
 
 - `track_id -> song_id` mapping for assignment.
 - single demo song (`demo-song`) for MVP.
-- active lyric line from global playback rendered as fixed banner in the upper
-  fifth of the viewport above the live video feed.
+- active lyric line rendered directly on the canvas above the bounding box of
+  the assigned face (bold yellow text, semi-transparent black background,
+  clamped to canvas bounds).
 
 ## Consequences
 - Satisfies Phase 5 acceptance with minimal complexity.
 - No per-person independent playback in MVP.
-- Lyric visibility is stable and independent of face-box movement.
+- Lyrics are face-anchored and move with the tracked person.
 - Easy extension path to multiple songs and per-track audio control later.
