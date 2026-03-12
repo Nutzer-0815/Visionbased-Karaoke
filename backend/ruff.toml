@@ -8,4 +8,3 @@ ignore = ["E203", "E501"]
 
 [lint.isort]
 known-first-party = ["app"]
-src = ["."]
