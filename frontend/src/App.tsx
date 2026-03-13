@@ -5,6 +5,11 @@ import { type Song, loadSongCatalog, resolveAudioUrl } from './karaoke/songs';
 
 const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
+// Capture at 640×360 to reduce JPEG payload size (~4× vs 1280×720).
+// YOLOv8n is optimised for 640px input — no detection quality benefit from higher res.
+// If small/distant faces are missed, revert to video.videoWidth/Height. See ADR 0008.
+const CAPTURE_WIDTH = 640;
+const CAPTURE_HEIGHT = 360;
 const TRACK_STALE_MS = 2000;
 const WS_BUFFER_THRESHOLD_BYTES = 1_000_000;
 const WS_RECONNECT_DELAY_MS = 1500;
@@ -234,6 +239,16 @@ function App() {
   });
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Refs for canvas rendering — avoids triggering 60fps canvas redraws on every
+  // RAF tick. Canvas only redraws when detections change (~6–7×/s). See ADR 0008.
+  const activeLineRef = useRef(activeLine);
+  const karaokeLineRef = useRef(karaokeLines);
+  const songByTrackRef = useRef(songByTrack);
+  const activeSongIdRef = useRef(activeSongId);
+  useEffect(() => { activeLineRef.current = activeLine; }, [activeLine]);
+  useEffect(() => { karaokeLineRef.current = karaokeLines; }, [karaokeLines]);
+  useEffect(() => { songByTrackRef.current = songByTrack; }, [songByTrack]);
+  useEffect(() => { activeSongIdRef.current = activeSongId; }, [activeSongId]);
 
   const refreshSessionMetrics = useCallback(() => {
     const s = sessionRef.current;
@@ -619,9 +634,9 @@ function App() {
       return;
     }
 
-    captureCanvas.width = video.videoWidth;
-    captureCanvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+    captureCanvas.width = CAPTURE_WIDTH;
+    captureCanvas.height = CAPTURE_HEIGHT;
+    ctx.drawImage(video, 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
     const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.7);
     const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
     const frameId = (frameIdRef.current += 1);
@@ -727,10 +742,10 @@ function App() {
       ctx.fillText(labelText, labelX + labelPad, labelY + labelFontSize);
 
       const lyricText =
-        activeSongId !== null &&
-        songByTrack[box.track_id] === activeSongId &&
-        activeLine >= 0
-          ? (karaokeLines[activeLine]?.text ?? '')
+        activeSongIdRef.current !== null &&
+        songByTrackRef.current[box.track_id] === activeSongIdRef.current &&
+        activeLineRef.current >= 0
+          ? (karaokeLineRef.current[activeLineRef.current]?.text ?? '')
           : '';
       if (lyricText) {
         const lyricFontSize = 18;
@@ -764,7 +779,7 @@ function App() {
       sessionRef.current.frontendOverlayFps = addSample(sessionRef.current.frontendOverlayFps, overlayFps);
     }
     refreshSessionMetrics();
-  }, [detections, frameSize, names, selectedTrackId, songByTrack, activeLine, karaokeLines, activeSongId, refreshSessionMetrics]);
+  }, [detections, frameSize, names, selectedTrackId, refreshSessionMetrics]);
 
   useEffect(() => {
     let rafId = 0;

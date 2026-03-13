@@ -46,3 +46,19 @@ Dieses Dokument sammelt einmalige Messwerte (single-run baseline) gemaess
 - Drift observed (ms): pending manual verification
 - Correct lyric line after seek: pending manual verification
 - Stability > 60s: pending manual verification
+
+---
+
+## Post-Optimization Notes (Issue #11, 2026-03-13)
+
+Three performance optimizations applied — new measurements pending after live test:
+
+| Optimization | Before | Expected Impact |
+|---|---|---|
+| Capture resolution | 1280×720 | 640×360 → ~4× smaller JPEG payload |
+| YOLO imgsz | auto | explicit 640 → no accidental upscale |
+| Canvas render rate | up to 60fps (RAF-driven) | ~6–7fps (detection-driven) |
+
+Re-measure with the same 20-frame protocol and update this section once live
+baseline is collected. Key metrics to watch: `E2E latency avg`, `backend inference avg`,
+`dropped frames`.

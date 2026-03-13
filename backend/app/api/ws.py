@@ -199,7 +199,7 @@ async def websocket_stream(websocket: WebSocket) -> None:
 
             inference_start = time.perf_counter()
             try:
-                results = model(frame, verbose=False)
+                results = model(frame, verbose=False, imgsz=640)
             except Exception:
                 await websocket.send_json({"type": "error", "message": "inference failed"})
                 continue
