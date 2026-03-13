@@ -10,6 +10,9 @@ import numpy as np
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from ultralytics import YOLO
 
+from app.core.identity import IdentityStore
+from app.core.recognizer import get_embedding, is_loaded
+
 router = APIRouter()
 
 MODEL_NAME = os.getenv("YOLO_MODEL", "yolov8n-face.pt")
@@ -18,6 +21,7 @@ CONF_THRESHOLD = float(os.getenv("CONF_THRESHOLD", "0.3"))
 TRACK_IOU_THRESHOLD = float(os.getenv("TRACK_IOU_THRESHOLD", "0.3"))
 TRACK_MAX_MISSED = int(os.getenv("TRACK_MAX_MISSED", "5"))
 model: YOLO | None = None
+identity_store: IdentityStore = IdentityStore()
 
 
 def load_model() -> None:
@@ -32,7 +36,7 @@ def load_model() -> None:
         ) from exc
 
 
-class Detection(TypedDict):
+class DetectionBase(TypedDict):
     x1: float
     y1: float
     x2: float
@@ -40,6 +44,10 @@ class Detection(TypedDict):
     conf: float
     cls: int
     track_id: int
+
+
+class Detection(DetectionBase, total=False):
+    suggested_name: str
 
 
 class Track(TypedDict):
@@ -70,6 +78,21 @@ def decode_frame(data: str) -> np.ndarray | None:
     buffer = np.frombuffer(img_bytes, np.uint8)
     frame = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
     return frame
+
+
+def _crop_face(
+    frame: np.ndarray, x1: float, y1: float, x2: float, y2: float
+) -> np.ndarray | None:
+    h, w = frame.shape[:2]
+    pad_x = (x2 - x1) * 0.15
+    pad_y = (y2 - y1) * 0.15
+    ix1 = max(0, int(x1 - pad_x))
+    iy1 = max(0, int(y1 - pad_y))
+    ix2 = min(w, int(x2 + pad_x))
+    iy2 = min(h, int(y2 + pad_y))
+    if ix2 <= ix1 or iy2 <= iy1:
+        return None
+    return frame[iy1:iy2, ix1:ix2]
 
 
 def iou(box_a: list[float], box_b: list[float]) -> float:
@@ -161,6 +184,8 @@ async def websocket_stream(websocket: WebSocket) -> None:
     tracks: list[Track] = []
     next_track_id = 1
     last_processed_at: float | None = None
+    recognition_enabled = False
+    track_embeddings: dict[int, np.ndarray] = {}
 
     try:
         while True:
@@ -171,7 +196,42 @@ async def websocket_stream(websocket: WebSocket) -> None:
                 await websocket.send_json({"type": "error", "message": "invalid json"})
                 continue
 
-            if message.get("type") != "frame":
+            msg_type = message.get("type")
+
+            # ── Non-frame control messages ──────────────────────────────────
+            if msg_type == "set_recognition":
+                recognition_enabled = bool(message.get("enabled", False))
+                await websocket.send_json({
+                    "type": "recognition_status",
+                    "enabled": recognition_enabled,
+                    "recognizer_available": is_loaded(),
+                })
+                continue
+
+            if msg_type == "confirm_identity":
+                track_id = message.get("track_id")
+                name = str(message.get("name", "")).strip()
+                if isinstance(track_id, int) and name and track_id in track_embeddings:
+                    identity_store.add(name, track_embeddings[track_id])
+                    await websocket.send_json({"type": "identity_saved", "name": name})
+                    await websocket.send_json({"type": "identities", "names": identity_store.names})
+                else:
+                    await websocket.send_json({"type": "error", "message": "confirm_identity: missing track or name"})
+                continue
+
+            if msg_type == "delete_identity":
+                name = str(message.get("name", "")).strip()
+                if name:
+                    identity_store.remove(name)
+                    await websocket.send_json({"type": "identities", "names": identity_store.names})
+                continue
+
+            if msg_type == "list_identities":
+                await websocket.send_json({"type": "identities", "names": identity_store.names})
+                continue
+
+            # ── Frame processing ─────────────────────────────────────────────
+            if msg_type != "frame":
                 await websocket.send_json({"type": "error", "message": "unsupported message type"})
                 continue
 
@@ -225,6 +285,20 @@ async def websocket_stream(websocket: WebSocket) -> None:
                 )
 
             detections, tracks, next_track_id = assign_tracks(detections, tracks, next_track_id)
+
+            # ── Face recognition (opt-in per session) ────────────────────────
+            if recognition_enabled and is_loaded():
+                for det in detections:
+                    crop = _crop_face(frame, det["x1"], det["y1"], det["x2"], det["y2"])
+                    if crop is None:
+                        continue
+                    emb = get_embedding(crop)
+                    if emb is None:
+                        continue
+                    track_embeddings[det["track_id"]] = emb
+                    match = identity_store.find_match(emb)
+                    if match:
+                        det["suggested_name"] = match
 
             processing_ms = (time.perf_counter() - processing_start) * 1000
             now_perf = time.perf_counter()

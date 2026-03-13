@@ -20,6 +20,14 @@ async def lifespan(_app: FastAPI):
     logger.info("Lade YOLO-Modell...")
     load_model()
     logger.info("YOLO-Modell geladen.")
+    logger.info("Lade Gesichtserkennungsmodell (InsightFace buffalo_s)...")
+    try:
+        from app.core.recognizer import load_recognizer
+        load_recognizer()
+        logger.info("Gesichtserkennungsmodell geladen.")
+    except Exception as exc:
+        logger.warning("Gesichtserkennungsmodell konnte nicht geladen werden: %s", exc)
+        logger.warning("Gesichtserkennung ist nicht verfuegbar.")
     yield
 
 

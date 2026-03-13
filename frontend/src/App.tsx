@@ -23,6 +23,7 @@ type Detection = {
   conf: number;
   cls: number;
   track_id: number;
+  suggested_name?: string;
 };
 
 type DetectionsMessage = {
@@ -174,6 +175,7 @@ const isDetectionsMessage = (value: unknown): value is DetectionsMessage => {
 
 const isErrorMessage = (value: unknown): value is ErrorMessage =>
   isRecord(value) && value.type === 'error' && typeof value.message === 'string';
+
 
 const COPY = {
   title: 'Face Karaoke AI',
