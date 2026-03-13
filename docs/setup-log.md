@@ -299,3 +299,13 @@ Schritte (steps):
 3. `backend/app/main.py`: Kombinierten Import `load_model, router as ws_router` auf zwei separate Zeilen aufgeteilt (Ruff-Anforderung bei gemischten Alias-Imports).
 4. Root `pyproject.toml` ebenfalls mit `[tool.ruff.lint.isort] known-first-party = ["app"]` versehen (Fallback).
 5. CI (GitHub Actions Backend-Job) ist jetzt wieder gruen (Commits: cdef95b, bfa760c, e91649d, 5d021a4, 4a502f7, 50ccba7).
+
+## 2026-03-13 — Entry 037: Issue #11 Performance Optimization Pass
+
+Schritte (steps):
+
+1. `frontend/src/App.tsx`: Capture-Auflösung von 1280×720 auf 640×360 reduziert (`CAPTURE_WIDTH`/`CAPTURE_HEIGHT` Konstanten). Ergibt ~4× kleinere JPEG-Payload pro Frame.
+2. `backend/app/api/ws.py`: `imgsz=640` explizit an YOLO-Aufruf übergeben — konsistent mit neuer Capture-Auflösung, verhindert unbeabsichtigtes Up-Scaling intern.
+3. `frontend/src/App.tsx`: Canvas-`useEffect` haengt nicht mehr von `activeLine`, `karaokeLines`, `songByTrack`, `activeSongId` ab. Stattdessen werden diese Werte via `useRef` gelesen und per `useEffect` synchronisiert. Canvas-Redraw laeuft jetzt nur bei neuen Detektionen (~6–7×/s) statt bei jedem RAF-Tick (60fps).
+4. `docs/adr/0008-capture-resolution.md`: Entscheidung dokumentiert inkl. Revert-Bedingung (kleine/entfernte Gesichter).
+5. `docs/metrics-baseline.md`: Post-Optimization-Abschnitt mit erwarteten Verbesserungen ergaenzt.
