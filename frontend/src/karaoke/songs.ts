@@ -4,35 +4,34 @@ export type Song = {
   id: string;
   title: string;
   lrcUrl: string;
-  audioUrl: string | null; // null = sine-wave fallback; "generated:*" = built-in generator
+  audioUrl: string | null;
 };
 
-type RawSong = {
-  id: unknown;
-  title: unknown;
-  lrcUrl: unknown;
-  audioUrl: unknown;
+type CatalogEntry = {
+  folder: string;
+  title: string;
+  /** Optional: filename inside the folder, or "generated:<id>" for built-in audio. */
+  audio?: string;
 };
 
-const isRawSong = (value: unknown): value is RawSong =>
-  typeof value === 'object' &&
-  value !== null &&
-  'id' in value &&
-  'title' in value &&
-  'lrcUrl' in value &&
-  'audioUrl' in value;
+function isCatalogEntry(value: unknown): value is CatalogEntry {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).folder === 'string' &&
+    typeof (value as Record<string, unknown>).title === 'string'
+  );
+}
 
-function toSong(raw: RawSong): Song | null {
-  if (
-    typeof raw.id !== 'string' ||
-    typeof raw.title !== 'string' ||
-    typeof raw.lrcUrl !== 'string'
-  ) {
-    return null;
-  }
-  const audioUrl =
-    typeof raw.audioUrl === 'string' ? raw.audioUrl : null;
-  return { id: raw.id, title: raw.title, lrcUrl: raw.lrcUrl, audioUrl };
+function entryToSong(entry: CatalogEntry): Song {
+  const { folder, title, audio } = entry;
+  const audioUrl = audio != null ? (audio.startsWith('generated:') ? audio : `/songs/${folder}/${audio}`) : null;
+  return {
+    id: folder,
+    title,
+    lrcUrl: `/songs/${folder}/lyrics.lrc`,
+    audioUrl,
+  };
 }
 
 export async function loadSongCatalog(): Promise<Song[]> {
@@ -44,13 +43,13 @@ export async function loadSongCatalog(): Promise<Song[]> {
   if (!Array.isArray(data)) {
     throw new Error('Song-Katalog hat unerwartetes Format');
   }
-  return data.filter(isRawSong).map(toSong).filter((s): s is Song => s !== null);
+  return data.filter(isCatalogEntry).map(entryToSong);
 }
 
-/** Resolves the audio data-URL for a song. Returns null for silence placeholder. */
+/** Resolves the audio URL for a song. Returns null if no audio is configured. */
 export function resolveAudioUrl(song: Song): string | null {
   if (song.audioUrl === 'generated:happy-birthday') {
     return generateHappyBirthdayDataUrl();
   }
-  return song.audioUrl; // null or an explicit URL
+  return song.audioUrl;
 }
