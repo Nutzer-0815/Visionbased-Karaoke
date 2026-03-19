@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateSineWavDataUrl } from './karaoke/audio';
 import { parseLrc, type LrcLine } from './karaoke/lrc';
 import { type Song, loadSongCatalog, resolveAudioUrl } from './karaoke/songs';
+import { ThemeSwitcher } from './ThemeSwitcher';
+import { useTheme } from './theme';
 
 const WS_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:8000/ws/stream';
 const FRAME_INTERVAL_MS = 150;
@@ -184,6 +186,7 @@ const COPY = {
 };
 
 function App() {
+  const [theme, setTheme] = useTheme();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -943,6 +946,7 @@ function App() {
           <p>{COPY.subtitle}</p>
         </div>
         <div className="status-stack">
+          <ThemeSwitcher theme={theme} onChange={setTheme} />
           <div className={`status ${stream ? 'on' : 'off'}`}>
             <span className="dot" />
             <span>{stream ? 'Webcam aktiv' : 'Webcam inaktiv'}</span>
