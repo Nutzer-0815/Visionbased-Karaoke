@@ -785,20 +785,29 @@ function App() {
           ? (karaokeLineRef.current[activeLineRef.current]?.text ?? '')
           : '';
       if (lyricText) {
-        const lyricFontSize = 18;
+        const lyricFontSize = 17;
+        const pad = 8;
         ctx.font = `bold ${lyricFontSize}px "Space Grotesk", sans-serif`;
-        const textMetrics = ctx.measureText(lyricText);
-        const textW = textMetrics.width;
-        const padding = 6;
-        const bgX = x + w / 2 - textW / 2 - padding;
-        const bgY = y - lyricFontSize - padding * 2;
-        const bgW = textW + padding * 2;
-        const bgH = lyricFontSize + padding;
-        const clampedBgX = Math.max(0, Math.min(canvas.width - bgW, bgX));
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-        ctx.fillRect(clampedBgX, Math.max(0, bgY), bgW, bgH);
+        const measured = ctx.measureText(lyricText).width;
+        const maxTextW = canvas.width - pad * 4;
+        const textW = Math.min(measured, maxTextW);
+        const bgW = textW + pad * 2;
+        const bgH = lyricFontSize + pad * 2;
+        // Horizontally centered on face, clamped to canvas
+        const idealBgX = x + w / 2 - bgW / 2;
+        const bgX = Math.max(pad, Math.min(canvas.width - bgW - pad, idealBgX));
+        // Prefer below the box; fall back to above if not enough room
+        const belowY = y + h + 6;
+        const aboveY = y - bgH - 6;
+        const bgY = belowY + bgH <= canvas.height ? belowY : Math.max(0, aboveY);
+        // Background with rounded corners
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+        ctx.beginPath();
+        ctx.roundRect(bgX, bgY, bgW, bgH, 7);
+        ctx.fill();
+        // Text
         ctx.fillStyle = '#facc15';
-        ctx.fillText(lyricText, clampedBgX + padding, Math.max(lyricFontSize, y - padding));
+        ctx.fillText(lyricText, bgX + pad, bgY + lyricFontSize + pad / 2);
       }
     });
     const renderEnd = performance.now();
