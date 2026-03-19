@@ -25,3 +25,9 @@ frontend/dist/
 
 # Local model weights
 backend/*.pt
+
+# Identity store (contains face embeddings – not for version control)
+backend/data/identities.json
+
+# InsightFace model cache
+backend/.insightface/

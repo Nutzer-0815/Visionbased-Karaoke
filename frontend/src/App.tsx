@@ -224,6 +224,11 @@ function App() {
     frontendRenderMs: null,
   });
   const [metricsOpen, setMetricsOpen] = useState(false);
+  const [recognitionEnabled, setRecognitionEnabled] = useState(false);
+  const [recognizerAvailable, setRecognizerAvailable] = useState(false);
+  const [suggestions, setSuggestions] = useState<Record<number, string>>({});
+  const [storedIdentities, setStoredIdentities] = useState<string[]>([]);
+  const [identitySavedMsg, setIdentitySavedMsg] = useState<string | null>(null);
 
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
     samples: 0,
@@ -426,6 +431,7 @@ function App() {
         reconnectAttemptsRef.current = 0;
         setWsStatus('connected');
         setWsError(null);
+        ws.send(JSON.stringify({ type: 'list_identities' }));
       };
 
       ws.onclose = () => {
@@ -463,6 +469,13 @@ function App() {
             payload.boxes.forEach((box) => {
               lastSeenRef.current[box.track_id] = now;
             });
+            const newSuggestions: Record<number, string> = {};
+            payload.boxes.forEach((box) => {
+              if (box.suggested_name) newSuggestions[box.track_id] = box.suggested_name;
+            });
+            if (Object.keys(newSuggestions).length > 0) {
+              setSuggestions((prev) => ({ ...prev, ...newSuggestions }));
+            }
             if (payload.metrics) {
               const metrics = payload.metrics;
               const e2eLatencyMs =
@@ -498,6 +511,15 @@ function App() {
             }
           } else if (isErrorMessage(payloadUnknown)) {
             setWsError(payloadUnknown.message);
+          } else if (isRecord(payloadUnknown) && payloadUnknown.type === 'recognition_status') {
+            setRecognitionEnabled(Boolean(payloadUnknown.enabled));
+            setRecognizerAvailable(Boolean(payloadUnknown.recognizer_available));
+          } else if (isRecord(payloadUnknown) && payloadUnknown.type === 'identities') {
+            setStoredIdentities(Array.isArray(payloadUnknown.names) ? (payloadUnknown.names as string[]) : []);
+          } else if (isRecord(payloadUnknown) && payloadUnknown.type === 'identity_saved') {
+            const savedName = typeof payloadUnknown.name === 'string' ? payloadUnknown.name : '';
+            setIdentitySavedMsg(`"${savedName}" gespeichert.`);
+            window.setTimeout(() => setIdentitySavedMsg(null), 2500);
           }
         } catch (err) {
           console.error(err);
@@ -549,6 +571,19 @@ function App() {
         }
       }
       setSongByTrack((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        Object.keys(prev).forEach((trackIdRaw) => {
+          const trackId = Number(trackIdRaw);
+          const lastSeen = lastSeenRef.current[trackId];
+          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
+            delete next[trackId];
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
+      setSuggestions((prev) => {
         let changed = false;
         const next = { ...prev };
         Object.keys(prev).forEach((trackIdRaw) => {
@@ -863,6 +898,29 @@ function App() {
     URL.revokeObjectURL(url);
   }, [runtimeMetrics, sessionMetrics]);
 
+  const toggleRecognition = useCallback(() => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'set_recognition', enabled: !recognitionEnabled }));
+  }, [recognitionEnabled]);
+
+  const confirmIdentity = useCallback((trackId: number, name: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'confirm_identity', track_id: trackId, name }));
+    setSuggestions((prev) => { const next = { ...prev }; delete next[trackId]; return next; });
+  }, []);
+
+  const dismissSuggestion = useCallback((trackId: number) => {
+    setSuggestions((prev) => { const next = { ...prev }; delete next[trackId]; return next; });
+  }, []);
+
+  const deleteIdentity = useCallback((name: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({ type: 'delete_identity', name }));
+  }, []);
+
   return (
     <div className="app">
       {stream && hasAssignedSong && (
@@ -899,6 +957,14 @@ function App() {
         </button>
         <button className="ghost" onClick={stopStream} disabled={!stream}>
           Stop Webcam
+        </button>
+        <button
+          className={`ghost recognition-toggle${recognitionEnabled ? ' active' : ''}`}
+          onClick={toggleRecognition}
+          disabled={wsStatus !== 'connected' || !recognizerAvailable}
+          title={recognizerAvailable ? 'Gesichtserkennung (opt-in, lokal)' : 'Erkennungsmodell nicht geladen'}
+        >
+          {recognitionEnabled ? 'Erkennung: AN' : 'Erkennung: AUS'}
         </button>
         {error && <span className="error">{error}</span>}
         {wsError && <div className="error-banner">{wsError}</div>}
@@ -1003,6 +1069,33 @@ function App() {
               Name speichern
             </button>
           </div>
+          {selectedTrackId !== null && suggestions[selectedTrackId] && (
+            <>
+              <div className="editor-divider" />
+              <div className="suggestion-banner">
+                <span>Erkannt: <strong>{suggestions[selectedTrackId]}</strong>?</span>
+                <button
+                  className="ghost"
+                  onClick={() => {
+                    confirmIdentity(selectedTrackId, suggestions[selectedTrackId]);
+                    setNameInput(suggestions[selectedTrackId]);
+                    setNames((prev) => ({ ...prev, [selectedTrackId]: suggestions[selectedTrackId] }));
+                  }}
+                >
+                  Ja, das bin ich
+                </button>
+                <button className="ghost" onClick={() => dismissSuggestion(selectedTrackId)}>
+                  Nein
+                </button>
+              </div>
+            </>
+          )}
+          {identitySavedMsg && (
+            <>
+              <div className="editor-divider" />
+              <div className="identity-saved-msg">{identitySavedMsg}</div>
+            </>
+          )}
           <div className="editor-divider" />
           <div className="editor-row">
             <span className="name-label">
@@ -1036,6 +1129,26 @@ function App() {
           </div>
         </div>
       </section>
+
+      {storedIdentities.length > 0 && (
+        <section className="identity-panel">
+          <h2 className="identity-panel-title">Gespeicherte Identitäten</h2>
+          <ul className="identity-list">
+            {storedIdentities.map((name) => (
+              <li key={name} className="identity-item">
+                <span>{name}</span>
+                <button className="ghost identity-delete" onClick={() => deleteIdentity(name)}>
+                  Löschen
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="identity-notice">
+            Embeddings werden lokal in <code>backend/data/identities.json</code> gespeichert.
+            Keine Cloud-Übertragung.
+          </p>
+        </section>
+      )}
 
       <section className="stage">
         <div className="video-wrap">

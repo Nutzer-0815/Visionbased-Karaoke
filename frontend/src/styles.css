@@ -350,6 +350,110 @@ select:disabled {
   font-size: 15px;
 }
 
+/* ── Recognition toggle ── */
+
+button.recognition-toggle {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+button.recognition-toggle.active {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+/* ── Suggestion banner ── */
+
+.suggestion-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.suggestion-banner strong {
+  font-weight: 700;
+}
+
+.identity-saved-msg {
+  font-size: 13px;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+/* ── Identities panel ── */
+
+.identity-panel {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.identity-panel-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.identity-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.identity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  font-size: 14px;
+}
+
+button.identity-delete {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+button.identity-delete:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.identity-notice {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.identity-notice code {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  background: #f1f5f9;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
 /* ── Stage ── */
 
 .stage {
