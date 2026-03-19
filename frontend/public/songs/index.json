@@ -1,7 +1,8 @@
 [
   {
     "folder": "demo",
-    "title": "Face Karaoke Demo"
+    "title": "Face Karaoke Demo",
+    "audio": "generated:demo"
   },
   {
     "folder": "happy-birthday",
@@ -10,6 +11,7 @@
   },
   {
     "folder": "techno-traum",
-    "title": "Techno Traum"
+    "title": "Techno Traum",
+    "audio": "generated:techno"
   }
 ]

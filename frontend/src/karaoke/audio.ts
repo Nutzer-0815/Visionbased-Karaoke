@@ -161,3 +161,49 @@ const HAPPY_BIRTHDAY_NOTES: Note[] = [
 export function generateHappyBirthdayDataUrl(): string {
   return generateMelodyDataUrl(HAPPY_BIRTHDAY_NOTES);
 }
+
+// ── Demo Song ─────────────────────────────────────────────────────────────────
+// BPM 120 — quarter = 0.5 s
+// 3-second C-major arpeggio motif × 21 = 63 s
+// Matches LRC: 21 lines every 3 s (last line at 00:57)
+const _DQ = 60 / 120; // 0.5 s
+const DEMO_MOTIF: Note[] = [
+  { freq: 262, dur: _DQ }, // C4
+  { freq: 330, dur: _DQ }, // E4
+  { freq: 392, dur: _DQ }, // G4
+  { freq: 330, dur: _DQ }, // E4
+  { freq: 262, dur: _DQ }, // C4
+  { freq: 0,   dur: _DQ }, // rest
+];
+const DEMO_NOTES: Note[] = Array.from({ length: 21 }, () => [...DEMO_MOTIF]).flat();
+
+export function generateDemoDataUrl(): string {
+  return generateMelodyDataUrl(DEMO_NOTES, 44100, 0.25);
+}
+
+// ── Techno Traum ──────────────────────────────────────────────────────────────
+// 4-second driving bass pattern × 10 = 40 s
+// Matches LRC: 10 lines every 4 s (last line at 00:36)
+const TECHNO_BAR: Note[] = [
+  { freq: 165, dur: 0.25 }, // E3 bass hit
+  { freq: 0,   dur: 0.25 },
+  { freq: 165, dur: 0.25 },
+  { freq: 0,   dur: 0.25 },
+  { freq: 220, dur: 0.25 }, // A3
+  { freq: 0,   dur: 0.25 },
+  { freq: 196, dur: 0.25 }, // G3
+  { freq: 0,   dur: 0.25 },
+  { freq: 165, dur: 0.25 },
+  { freq: 0,   dur: 0.25 },
+  { freq: 165, dur: 0.25 },
+  { freq: 0,   dur: 0.25 },
+  { freq: 247, dur: 0.25 }, // B3
+  { freq: 0,   dur: 0.25 },
+  { freq: 220, dur: 0.25 }, // A3
+  { freq: 0,   dur: 0.25 },
+];
+const TECHNO_NOTES: Note[] = Array.from({ length: 10 }, () => [...TECHNO_BAR]).flat();
+
+export function generateTechnoDataUrl(): string {
+  return generateMelodyDataUrl(TECHNO_NOTES, 44100, 0.28);
+}

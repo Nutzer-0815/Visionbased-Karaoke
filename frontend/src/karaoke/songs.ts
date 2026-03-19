@@ -1,4 +1,4 @@
-import { generateHappyBirthdayDataUrl } from './audio';
+import { generateDemoDataUrl, generateHappyBirthdayDataUrl, generateTechnoDataUrl } from './audio';
 
 export type Song = {
   id: string;
@@ -48,8 +48,10 @@ export async function loadSongCatalog(): Promise<Song[]> {
 
 /** Resolves the audio URL for a song. Returns null if no audio is configured. */
 export function resolveAudioUrl(song: Song): string | null {
-  if (song.audioUrl === 'generated:happy-birthday') {
-    return generateHappyBirthdayDataUrl();
+  switch (song.audioUrl) {
+    case 'generated:happy-birthday': return generateHappyBirthdayDataUrl();
+    case 'generated:demo':           return generateDemoDataUrl();
+    case 'generated:techno':         return generateTechnoDataUrl();
+    default:                         return song.audioUrl;
   }
-  return song.audioUrl;
 }
