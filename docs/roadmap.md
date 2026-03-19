@@ -1,7 +1,7 @@
 ﻿# Roadmap
 
-**Status:** Phase 0-6 Completed  
-**Last updated:** 2026-02-20
+**Status:** Phase 0-7 Completed
+**Last updated:** 2026-03-19
 
 This document defines the **development roadmap**
 from project setup to MVP completion and beyond.
@@ -19,6 +19,7 @@ It is the **single source of truth** for development order and scope progression
 - Phase 4: Completed
 - Phase 5: Completed (MVP Completion)
 - Phase 6: Completed (Metrics, Evaluation, Polishing)
+- Phase 7: Completed (Persistent Face Recognition + Theme Switcher)
 
 ---
 
@@ -141,16 +142,34 @@ It is the **single source of truth** for development order and scope progression
 
 ---
 
+## Phase 7 — Persistent Face Recognition + Theme Switcher
+
+**Goal:** Extend the system beyond MVP with two opt-in features.
+
+**Focus:**
+
+- Persistent face recognition across sessions using InsightFace buffalo_s
+- Opt-in embedding storage with explicit user confirmation flow
+- Privacy documentation
+- 7-theme UI switcher (Standard, Dunkel, Hacker, Nintendo, Manga, Pink, Wirtshaus)
+- CSS custom-property theming system with localStorage persistence
+
+**Outcome:**
+
+- Known faces are recognized and named automatically on re-entry
+- Users can personalize the visual appearance of the interface
+
+---
+
 ## Post-MVP (Optional / Future Work)
 
-These items are **explicitly not required** for MVP completion:
+These items are **explicitly not required** for current completion:
 
 - Additional songs and media management
-- Improved UI/visual polish
 - Cloud deployment
-- Persistent face recognition
-- Performance optimizations beyond MVP needs
-- A drawing box, where you can draw accesoires and put them onto the head of people (propably has to be done with actual facial recognition)
+- Performance optimizations (GPU inference, ByteTrack, frame skipping)
+- buffalo_s → buffalo_l upgrade for higher recognition accuracy
+- Accessory drawing overlay (hat, glasses etc.) anchored to facial landmarks
 
 ---
 

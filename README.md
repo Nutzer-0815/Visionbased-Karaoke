@@ -16,6 +16,7 @@
 - LRC-Dateiformat für Lyrics mit Zeitstempel-Synchronisation
 - Runtime-Metriken (E2E-Latenz, Inference-Zeit, FPS) mit Session-Export
 - Persistente Gesichtswiedererkennung über Sessions (opt-in, lokal, InsightFace)
+- 7 visuelle Themes (Standard, Dunkel, Hacker, Nintendo, Manga, Pink, Wirtshaus) per Hover-Menü
 
 ---
 
