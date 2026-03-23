@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { generateSineWavDataUrl } from './karaoke/audio';
+import { loadNotes, getTargetFreq, scorePitch, type NoteEntry } from './karaoke/notes';
+import { PitchDetector } from './karaoke/pitch';
 import { parseLrc, type LrcLine } from './karaoke/lrc';
 import { type Song, loadSongCatalog, resolveAudioUrl } from './karaoke/songs';
 import { ThemeSwitcher } from './ThemeSwitcher';
@@ -179,6 +181,63 @@ const isErrorMessage = (value: unknown): value is ErrorMessage =>
   isRecord(value) && value.type === 'error' && typeof value.message === 'string';
 
 
+// ── Pitch bar canvas helpers ──────────────────────────────────────────────────
+
+const LOG_FREQ_MIN = Math.log2(80);
+const LOG_FREQ_MAX = Math.log2(1100);
+
+function freqToBarY(freq: number, barY: number, barH: number): number {
+  const clamped = Math.max(80, Math.min(1100, freq));
+  const ratio = (Math.log2(clamped) - LOG_FREQ_MIN) / (LOG_FREQ_MAX - LOG_FREQ_MIN);
+  return barY + barH * (1 - ratio);
+}
+
+function drawPitchBar(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number, w: number, h: number,
+  detected: number | null,
+  target: number | null,
+): void {
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 3);
+  ctx.fill();
+  // Target line (white dashed)
+  if (target !== null) {
+    const ty = freqToBarY(target, y, h);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, ty);
+    ctx.lineTo(x + w, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  // Detected pitch dot (color = accuracy)
+  if (detected !== null) {
+    const dy = freqToBarY(detected, y, h);
+    const score = scorePitch(detected, target);
+    ctx.fillStyle =
+      score === 'perfect' ? '#22c55e' :
+      score === 'close'   ? '#facc15' : '#ef4444';
+    ctx.beginPath();
+    ctx.arc(x + w / 2, dy, 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // Border
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 3);
+  ctx.stroke();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const COPY = {
   title: 'Face Karaoke AI',
   subtitle: 'Live Face Tracking + Karaoke Overlay (React + Vite + TypeScript)',
@@ -232,6 +291,11 @@ function App() {
   const [suggestions, setSuggestions] = useState<Record<number, string>>({});
   const [storedIdentities, setStoredIdentities] = useState<string[]>([]);
   const [identitySavedMsg, setIdentitySavedMsg] = useState<string | null>(null);
+  const [detectedPitch, setDetectedPitch] = useState<number | null>(null);
+  const [micEnabled, setMicEnabled] = useState(false);
+  const pitchDetectorRef = useRef<PitchDetector | null>(null);
+  const detectedPitchRef = useRef<number | null>(null);
+  const trackNotesRef = useRef<Record<number, NoteEntry[]>>({});
 
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
     samples: 0,
@@ -259,6 +323,7 @@ function App() {
   useEffect(() => { karaokeLineRef.current = karaokeLines; }, [karaokeLines]);
   useEffect(() => { songByTrackRef.current = songByTrack; }, [songByTrack]);
   useEffect(() => { activeSongIdRef.current = activeSongId; }, [activeSongId]);
+  useEffect(() => { detectedPitchRef.current = detectedPitch; }, [detectedPitch]);
 
   const refreshSessionMetrics = useCallback(() => {
     const s = sessionRef.current;
@@ -339,6 +404,11 @@ function App() {
     frameIdRef.current = 0;
     lastOverlayRenderAtRef.current = null;
     reconnectAttemptsRef.current = 0;
+    pitchDetectorRef.current?.stop();
+    pitchDetectorRef.current = null;
+    setMicEnabled(false);
+    setDetectedPitch(null);
+    trackNotesRef.current = {};
     resetSessionStats();
     setRuntimeMetrics({
       e2eLatencyMs: null,
@@ -581,6 +651,7 @@ function App() {
           const lastSeen = lastSeenRef.current[trackId];
           if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
             delete next[trackId];
+            delete trackNotesRef.current[trackId];
             changed = true;
           }
         });
@@ -630,6 +701,8 @@ function App() {
     const song = songs.find((s) => s.id === selectedSongId);
     if (song) {
       await loadSong(song);
+      const notes = await loadNotes(song.id);
+      if (notes) trackNotesRef.current[selectedTrackId] = notes;
     }
   }, [selectedTrackId, selectedSongId, songs, loadSong]);
 
@@ -812,6 +885,14 @@ function App() {
         ctx.fillStyle = '#facc15';
         ctx.fillText(lyricText, bgX + pad, bgY + lyricFontSize + pad / 2);
       }
+      // Pitch bar (right of bounding box; only when notes are loaded for this track)
+      const pitchNotes = trackNotesRef.current[box.track_id];
+      if (pitchNotes && pitchNotes.length > 0) {
+        const currentMs = (audioRef.current?.currentTime ?? 0) * 1000;
+        const targetFreq = getTargetFreq(currentMs, pitchNotes);
+        const barX = Math.min(x + w + 6, canvas.width - 20);
+        drawPitchBar(ctx, barX, y, 14, h, detectedPitchRef.current, targetFreq);
+      }
     });
     const renderEnd = performance.now();
     const renderMs = renderEnd - renderStart;
@@ -869,6 +950,10 @@ function App() {
       stream?.getTracks().forEach((track) => track.stop());
     };
   }, [stream]);
+
+  useEffect(() => {
+    return () => { pitchDetectorRef.current?.stop(); };
+  }, []);
 
   const selectedLabel =
     selectedTrackId === null
@@ -932,6 +1017,24 @@ function App() {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ type: 'delete_identity', name }));
   }, []);
+
+  const toggleMic = useCallback(async () => {
+    if (micEnabled) {
+      pitchDetectorRef.current?.stop();
+      pitchDetectorRef.current = null;
+      setMicEnabled(false);
+      setDetectedPitch(null);
+    } else {
+      try {
+        const detector = new PitchDetector(({ freq }) => { setDetectedPitch(freq); });
+        await detector.start();
+        pitchDetectorRef.current = detector;
+        setMicEnabled(true);
+      } catch {
+        setError('Mikrofonzugriff verweigert.');
+      }
+    }
+  }, [micEnabled]);
 
   return (
     <div className="app">
@@ -1205,7 +1308,21 @@ function App() {
             >
               Restart
             </button>
+            <button
+              className={`ghost${micEnabled ? ' active' : ''}`}
+              onClick={() => { void toggleMic(); }}
+              title={micEnabled ? 'Mikrofon deaktivieren' : 'Mikrofon für Pitch-Erkennung aktivieren'}
+            >
+              {micEnabled ? 'Mikrofon: AN' : 'Mikrofon: AUS'}
+            </button>
           </div>
+          {micEnabled && (
+            <p className="pitch-status">
+              {detectedPitch !== null
+                ? `Erkannte Tonhöhe: ${Math.round(detectedPitch)} Hz`
+                : 'Kein Ton erkannt...'}
+            </p>
+          )}
           <audio ref={audioRef} src={audioSrc ?? undefined} preload="auto" />
         </div>
         <div className="karaoke-lines">

@@ -1,0 +1,506 @@
+[
+  {
+    "time_ms": 0,
+    "freq": 262
+  },
+  {
+    "time_ms": 500,
+    "freq": 330
+  },
+  {
+    "time_ms": 1000,
+    "freq": 392
+  },
+  {
+    "time_ms": 1500,
+    "freq": 330
+  },
+  {
+    "time_ms": 2000,
+    "freq": 262
+  },
+  {
+    "time_ms": 2500,
+    "freq": 0
+  },
+  {
+    "time_ms": 3000,
+    "freq": 262
+  },
+  {
+    "time_ms": 3500,
+    "freq": 330
+  },
+  {
+    "time_ms": 4000,
+    "freq": 392
+  },
+  {
+    "time_ms": 4500,
+    "freq": 330
+  },
+  {
+    "time_ms": 5000,
+    "freq": 262
+  },
+  {
+    "time_ms": 5500,
+    "freq": 0
+  },
+  {
+    "time_ms": 6000,
+    "freq": 262
+  },
+  {
+    "time_ms": 6500,
+    "freq": 330
+  },
+  {
+    "time_ms": 7000,
+    "freq": 392
+  },
+  {
+    "time_ms": 7500,
+    "freq": 330
+  },
+  {
+    "time_ms": 8000,
+    "freq": 262
+  },
+  {
+    "time_ms": 8500,
+    "freq": 0
+  },
+  {
+    "time_ms": 9000,
+    "freq": 262
+  },
+  {
+    "time_ms": 9500,
+    "freq": 330
+  },
+  {
+    "time_ms": 10000,
+    "freq": 392
+  },
+  {
+    "time_ms": 10500,
+    "freq": 330
+  },
+  {
+    "time_ms": 11000,
+    "freq": 262
+  },
+  {
+    "time_ms": 11500,
+    "freq": 0
+  },
+  {
+    "time_ms": 12000,
+    "freq": 262
+  },
+  {
+    "time_ms": 12500,
+    "freq": 330
+  },
+  {
+    "time_ms": 13000,
+    "freq": 392
+  },
+  {
+    "time_ms": 13500,
+    "freq": 330
+  },
+  {
+    "time_ms": 14000,
+    "freq": 262
+  },
+  {
+    "time_ms": 14500,
+    "freq": 0
+  },
+  {
+    "time_ms": 15000,
+    "freq": 262
+  },
+  {
+    "time_ms": 15500,
+    "freq": 330
+  },
+  {
+    "time_ms": 16000,
+    "freq": 392
+  },
+  {
+    "time_ms": 16500,
+    "freq": 330
+  },
+  {
+    "time_ms": 17000,
+    "freq": 262
+  },
+  {
+    "time_ms": 17500,
+    "freq": 0
+  },
+  {
+    "time_ms": 18000,
+    "freq": 262
+  },
+  {
+    "time_ms": 18500,
+    "freq": 330
+  },
+  {
+    "time_ms": 19000,
+    "freq": 392
+  },
+  {
+    "time_ms": 19500,
+    "freq": 330
+  },
+  {
+    "time_ms": 20000,
+    "freq": 262
+  },
+  {
+    "time_ms": 20500,
+    "freq": 0
+  },
+  {
+    "time_ms": 21000,
+    "freq": 262
+  },
+  {
+    "time_ms": 21500,
+    "freq": 330
+  },
+  {
+    "time_ms": 22000,
+    "freq": 392
+  },
+  {
+    "time_ms": 22500,
+    "freq": 330
+  },
+  {
+    "time_ms": 23000,
+    "freq": 262
+  },
+  {
+    "time_ms": 23500,
+    "freq": 0
+  },
+  {
+    "time_ms": 24000,
+    "freq": 262
+  },
+  {
+    "time_ms": 24500,
+    "freq": 330
+  },
+  {
+    "time_ms": 25000,
+    "freq": 392
+  },
+  {
+    "time_ms": 25500,
+    "freq": 330
+  },
+  {
+    "time_ms": 26000,
+    "freq": 262
+  },
+  {
+    "time_ms": 26500,
+    "freq": 0
+  },
+  {
+    "time_ms": 27000,
+    "freq": 262
+  },
+  {
+    "time_ms": 27500,
+    "freq": 330
+  },
+  {
+    "time_ms": 28000,
+    "freq": 392
+  },
+  {
+    "time_ms": 28500,
+    "freq": 330
+  },
+  {
+    "time_ms": 29000,
+    "freq": 262
+  },
+  {
+    "time_ms": 29500,
+    "freq": 0
+  },
+  {
+    "time_ms": 30000,
+    "freq": 262
+  },
+  {
+    "time_ms": 30500,
+    "freq": 330
+  },
+  {
+    "time_ms": 31000,
+    "freq": 392
+  },
+  {
+    "time_ms": 31500,
+    "freq": 330
+  },
+  {
+    "time_ms": 32000,
+    "freq": 262
+  },
+  {
+    "time_ms": 32500,
+    "freq": 0
+  },
+  {
+    "time_ms": 33000,
+    "freq": 262
+  },
+  {
+    "time_ms": 33500,
+    "freq": 330
+  },
+  {
+    "time_ms": 34000,
+    "freq": 392
+  },
+  {
+    "time_ms": 34500,
+    "freq": 330
+  },
+  {
+    "time_ms": 35000,
+    "freq": 262
+  },
+  {
+    "time_ms": 35500,
+    "freq": 0
+  },
+  {
+    "time_ms": 36000,
+    "freq": 262
+  },
+  {
+    "time_ms": 36500,
+    "freq": 330
+  },
+  {
+    "time_ms": 37000,
+    "freq": 392
+  },
+  {
+    "time_ms": 37500,
+    "freq": 330
+  },
+  {
+    "time_ms": 38000,
+    "freq": 262
+  },
+  {
+    "time_ms": 38500,
+    "freq": 0
+  },
+  {
+    "time_ms": 39000,
+    "freq": 262
+  },
+  {
+    "time_ms": 39500,
+    "freq": 330
+  },
+  {
+    "time_ms": 40000,
+    "freq": 392
+  },
+  {
+    "time_ms": 40500,
+    "freq": 330
+  },
+  {
+    "time_ms": 41000,
+    "freq": 262
+  },
+  {
+    "time_ms": 41500,
+    "freq": 0
+  },
+  {
+    "time_ms": 42000,
+    "freq": 262
+  },
+  {
+    "time_ms": 42500,
+    "freq": 330
+  },
+  {
+    "time_ms": 43000,
+    "freq": 392
+  },
+  {
+    "time_ms": 43500,
+    "freq": 330
+  },
+  {
+    "time_ms": 44000,
+    "freq": 262
+  },
+  {
+    "time_ms": 44500,
+    "freq": 0
+  },
+  {
+    "time_ms": 45000,
+    "freq": 262
+  },
+  {
+    "time_ms": 45500,
+    "freq": 330
+  },
+  {
+    "time_ms": 46000,
+    "freq": 392
+  },
+  {
+    "time_ms": 46500,
+    "freq": 330
+  },
+  {
+    "time_ms": 47000,
+    "freq": 262
+  },
+  {
+    "time_ms": 47500,
+    "freq": 0
+  },
+  {
+    "time_ms": 48000,
+    "freq": 262
+  },
+  {
+    "time_ms": 48500,
+    "freq": 330
+  },
+  {
+    "time_ms": 49000,
+    "freq": 392
+  },
+  {
+    "time_ms": 49500,
+    "freq": 330
+  },
+  {
+    "time_ms": 50000,
+    "freq": 262
+  },
+  {
+    "time_ms": 50500,
+    "freq": 0
+  },
+  {
+    "time_ms": 51000,
+    "freq": 262
+  },
+  {
+    "time_ms": 51500,
+    "freq": 330
+  },
+  {
+    "time_ms": 52000,
+    "freq": 392
+  },
+  {
+    "time_ms": 52500,
+    "freq": 330
+  },
+  {
+    "time_ms": 53000,
+    "freq": 262
+  },
+  {
+    "time_ms": 53500,
+    "freq": 0
+  },
+  {
+    "time_ms": 54000,
+    "freq": 262
+  },
+  {
+    "time_ms": 54500,
+    "freq": 330
+  },
+  {
+    "time_ms": 55000,
+    "freq": 392
+  },
+  {
+    "time_ms": 55500,
+    "freq": 330
+  },
+  {
+    "time_ms": 56000,
+    "freq": 262
+  },
+  {
+    "time_ms": 56500,
+    "freq": 0
+  },
+  {
+    "time_ms": 57000,
+    "freq": 262
+  },
+  {
+    "time_ms": 57500,
+    "freq": 330
+  },
+  {
+    "time_ms": 58000,
+    "freq": 392
+  },
+  {
+    "time_ms": 58500,
+    "freq": 330
+  },
+  {
+    "time_ms": 59000,
+    "freq": 262
+  },
+  {
+    "time_ms": 59500,
+    "freq": 0
+  },
+  {
+    "time_ms": 60000,
+    "freq": 262
+  },
+  {
+    "time_ms": 60500,
+    "freq": 330
+  },
+  {
+    "time_ms": 61000,
+    "freq": 392
+  },
+  {
+    "time_ms": 61500,
+    "freq": 330
+  },
+  {
+    "time_ms": 62000,
+    "freq": 262
+  },
+  {
+    "time_ms": 62500,
+    "freq": 0
+  }
+]
