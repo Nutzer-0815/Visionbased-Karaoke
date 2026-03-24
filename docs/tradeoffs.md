@@ -49,6 +49,13 @@ Status: Current
 - Cost: all theme variables must be kept in sync manually; no TypeScript safety for theme tokens.
 - Rejected alternative: Tailwind `darkMode: 'class'` — not flexible enough for 7 distinct visual themes.
 
+## 9) Pitch Scoring: Chroma-Based vs. Absolute Frequency Matching
+
+- Choice: compare detected pitch against target using **chroma distance** (pitch class modulo 12 semitones), ignoring octave.
+- Benefit: octave-independent — a soprano singing E4 correctly scores as hitting the target E2; works across all vocal ranges without calibration.
+- Cost: octave errors are not penalized; a strict mode (absolute semitone distance) may be desirable for advanced users.
+- Rejected alternative: absolute semitone distance — would incorrectly penalize singers performing in a different octave than the original recording.
+
 ## 8) Folder-per-Song Structure
 
 - Choice: each song lives in `public/songs/{folder}/` with `lyrics.lrc` and optional `audio.*`.

@@ -42,6 +42,7 @@ communicating via **WebSocket** for real-time face detection and tracking.
 - Karaoke timing based on audio playback
 - Visualization of runtime metrics (FPS, latency)
 - Theme switching (7 visual themes, CSS custom properties, localStorage persistence)
+- Real-time pitch detection via `AudioContext` + autocorrelation; chroma-based scoring against per-song `notes.json` target frequencies
 
 ---
 
@@ -153,6 +154,24 @@ Recognition is opt-in per session; embeddings are only stored on explicit user c
 - ~150 MB model download on first start
 - CPU-only inference adds ~20–40 ms per recognized face crop
 - buffalo_s accuracy is lower than buffalo_l (trade-off: speed vs. accuracy)
+
+---
+
+### Pitch Detection: Chroma-Based Scoring (Browser-Only)
+
+Pitch detection runs entirely in the browser via Web Audio API (`AudioContext`, `AnalyserNode`, autocorrelation on a 2048-sample buffer at 80 ms intervals). Accuracy is evaluated using **chroma-based distance** (pitch class modulo 12 semitones), making scoring octave-independent.
+
+**Rationale**
+
+- No backend round-trip needed; latency is sub-100 ms
+- Chroma matching handles singers with different vocal ranges correctly (e.g. a soprano hitting E4 scores as correct when the target is E2)
+- Per-song `notes.json` keeps note data co-located with lyrics and audio
+
+**Trade-offs**
+
+- Autocorrelation is less accurate than YIN or McLeod for noisy environments
+- Chroma scoring ignores octave errors; a more strict mode could be added later
+- Requires explicit microphone permission from the user
 
 ---
 

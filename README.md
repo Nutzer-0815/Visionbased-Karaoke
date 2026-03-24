@@ -17,6 +17,7 @@
 - Runtime-Metriken (E2E-Latenz, Inference-Zeit, FPS) mit Session-Export
 - Persistente Gesichtswiedererkennung über Sessions (opt-in, lokal, InsightFace)
 - 7 visuelle Themes (Standard, Dunkel, Hacker, Nintendo, Manga, Pink, Wirtshaus) per Hover-Menü
+- Echtzeit-Pitch-Erkennung via Mikrofon mit visuellem Trefferbalken auf dem Canvas (chroma-basiert, oktavunabhängig)
 
 ---
 

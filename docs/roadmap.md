@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-**Status:** Phase 0-7 Completed
+**Status:** Phase 0-8 Completed
 **Last updated:** 2026-03-19
 
 This document defines the **development roadmap**
@@ -161,6 +161,24 @@ It is the **single source of truth** for development order and scope progression
 
 ---
 
+## Phase 8 — Real-Time Pitch Detection
+
+**Goal:** Give singers immediate visual feedback on whether they are hitting the correct note.
+
+**Focus:**
+
+- Microphone input via `getUserMedia({ audio: true })`
+- Autocorrelation-based pitch detection (80–1100 Hz) running entirely in the browser
+- Chroma-based scoring (octave-independent): singing E4 when the target is E2 counts as correct
+- Per-song `notes.json` with timestamped target frequencies
+- Canvas pitch bar rendered to the right of each face bounding box (color-coded: perfect / close / off)
+
+**Outcome:**
+
+- Singers see in real time whether they are on pitch, regardless of their vocal range
+
+---
+
 ## Post-MVP (Optional / Future Work)
 
 These items are **explicitly not required** for current completion:
@@ -177,6 +195,6 @@ These items are **explicitly not required** for current completion:
 
 The roadmap is considered complete when:
 
-- All implementation phases (0-7) are finished
+- All implementation phases (0-8) are finished
 - MVP acceptance criteria are met
 - Documentation reflects the implemented system
