@@ -20,8 +20,35 @@ MAX_FRAME_B64_LEN = int(os.getenv("MAX_FRAME_B64_LEN", "2500000"))
 CONF_THRESHOLD = float(os.getenv("CONF_THRESHOLD", "0.3"))
 TRACK_IOU_THRESHOLD = float(os.getenv("TRACK_IOU_THRESHOLD", "0.3"))
 TRACK_MAX_MISSED = int(os.getenv("TRACK_MAX_MISSED", "5"))
+
+# ── Performance settings ──────────────────────────────────────────────────────
+# YOLO_DEVICE: "auto" (CUDA if available, else CPU), "cpu", "0", "cuda:0" etc.
+YOLO_DEVICE = os.getenv("YOLO_DEVICE", "auto")
+# USE_BYTETRACK: "1" to use ByteTrack (better for occlusions); "0" = IOU tracker
+USE_BYTETRACK = os.getenv("USE_BYTETRACK", "0") == "1"
+# MIN_FRAME_INTERVAL_MS: drop frames arriving faster than this (0 = disabled)
+MIN_FRAME_INTERVAL_MS = float(os.getenv("MIN_FRAME_INTERVAL_MS", "0"))
+
 model: YOLO | None = None
 identity_store: IdentityStore = IdentityStore()
+
+
+def _resolve_device() -> str:
+    """Return the device string for YOLO inference.
+
+    "auto" → CUDA device 0 if PyTorch detects a CUDA GPU, otherwise "cpu".
+    Any other value is passed through unchanged (e.g. "cpu", "0", "cuda:1").
+    """
+    if YOLO_DEVICE != "auto":
+        return YOLO_DEVICE
+    try:
+        import torch  # ultralytics already depends on torch
+        return "0" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        return "cpu"
+
+
+_DEVICE: str = _resolve_device()
 
 
 def load_model() -> None:
@@ -181,6 +208,15 @@ async def websocket_stream(websocket: WebSocket) -> None:
         await websocket.close()
         return
 
+    # Reset ByteTrack state so each new connection starts with a clean tracker.
+    # (ByteTrack state is stored globally in model.predictor; safe for single-user use.)
+    if USE_BYTETRACK:
+        try:
+            if model.predictor is not None and hasattr(model.predictor, "trackers"):
+                model.predictor.trackers.clear()
+        except AttributeError:
+            pass
+
     tracks: list[Track] = []
     next_track_id = 1
     last_processed_at: float | None = None
@@ -235,6 +271,12 @@ async def websocket_stream(websocket: WebSocket) -> None:
                 await websocket.send_json({"type": "error", "message": "unsupported message type"})
                 continue
 
+            # Frame skipping: drop frames that arrive faster than MIN_FRAME_INTERVAL_MS
+            if MIN_FRAME_INTERVAL_MS > 0 and last_processed_at is not None:
+                elapsed_ms = (time.perf_counter() - last_processed_at) * 1000
+                if elapsed_ms < MIN_FRAME_INTERVAL_MS:
+                    continue
+
             data = message.get("data")
             if not data:
                 await websocket.send_json({"type": "error", "message": "missing frame data"})
@@ -259,32 +301,62 @@ async def websocket_stream(websocket: WebSocket) -> None:
 
             inference_start = time.perf_counter()
             try:
-                results = model(frame, verbose=False, imgsz=640)
+                if USE_BYTETRACK:
+                    results = model.track(
+                        frame,
+                        verbose=False,
+                        imgsz=640,
+                        persist=True,
+                        tracker="bytetrack.yaml",
+                        device=_DEVICE,
+                    )
+                else:
+                    results = model(frame, verbose=False, imgsz=640, device=_DEVICE)
             except Exception:
                 await websocket.send_json({"type": "error", "message": "inference failed"})
                 continue
             inference_ms = (time.perf_counter() - inference_start) * 1000
 
             detections: list[Detection] = []
-            for box in results[0].boxes:
-                x1, y1, x2, y2 = box.xyxy[0].tolist()
-                conf = float(box.conf[0]) if box.conf is not None else 0.0
-                cls = int(box.cls[0]) if box.cls is not None else -1
-                if conf < CONF_THRESHOLD:
-                    continue
-                detections.append(
-                    {
-                        "x1": x1,
-                        "y1": y1,
-                        "x2": x2,
-                        "y2": y2,
-                        "conf": conf,
-                        "cls": cls,
-                        "track_id": -1,
-                    }
-                )
 
-            detections, tracks, next_track_id = assign_tracks(detections, tracks, next_track_id)
+            if USE_BYTETRACK:
+                # ByteTrack manages track IDs directly; no custom assign_tracks needed.
+                raw_ids = results[0].boxes.id
+                for i, box in enumerate(results[0].boxes):
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    conf = float(box.conf[0]) if box.conf is not None else 0.0
+                    cls = int(box.cls[0]) if box.cls is not None else 0
+                    track_id = int(raw_ids[i]) if raw_ids is not None else -1
+                    detections.append(
+                        {
+                            "x1": x1,
+                            "y1": y1,
+                            "x2": x2,
+                            "y2": y2,
+                            "conf": conf,
+                            "cls": cls,
+                            "track_id": track_id,
+                        }
+                    )
+            else:
+                for box in results[0].boxes:
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    conf = float(box.conf[0]) if box.conf is not None else 0.0
+                    cls = int(box.cls[0]) if box.cls is not None else -1
+                    if conf < CONF_THRESHOLD:
+                        continue
+                    detections.append(
+                        {
+                            "x1": x1,
+                            "y1": y1,
+                            "x2": x2,
+                            "y2": y2,
+                            "conf": conf,
+                            "cls": cls,
+                            "track_id": -1,
+                        }
+                    )
+                detections, tracks, next_track_id = assign_tracks(detections, tracks, next_track_id)
 
             # ── Face recognition (opt-in per session) ────────────────────────
             if recognition_enabled and is_loaded():

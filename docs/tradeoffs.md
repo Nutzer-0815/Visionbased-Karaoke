@@ -61,3 +61,24 @@ Status: Current
 - Choice: each song lives in `public/songs/{folder}/` with `lyrics.lrc` and optional `audio.*`.
 - Benefit: adding or removing a song requires changes in exactly two places (folder + one line in `index.json`).
 - Cost: slightly more filesystem structure than a flat file approach.
+
+## 10) GPU Auto-Detection: "auto" Device Resolution
+
+- Choice: `YOLO_DEVICE=auto` resolves to CUDA device 0 if PyTorch detects a CUDA GPU at startup, otherwise falls back to CPU.
+- Benefit: zero configuration for GPU users; safe fallback for CPU-only machines.
+- Cost: device is resolved once at startup — a GPU plugged in later requires a server restart.
+- Rejected alternative: always CPU — would leave GPU capacity unused on capable hardware.
+
+## 11) ByteTrack vs. IOU Tracker
+
+- Choice: IOU greedy tracker as default; ByteTrack available via `USE_BYTETRACK=1`.
+- Benefit: IOU tracker is dependency-free and sufficient for 1–3 faces with low occlusion; ByteTrack handles temporary disappearances and crowded scenes better.
+- Cost: ByteTrack uses ultralytics' internal tracker state (global per process) — multiple simultaneous WebSocket connections would share tracker state. Acceptable for single-user local use.
+- Rejected alternative: ByteTrack as default — overkill for the typical 1–3 face use case and adds connection-state complexity.
+
+## 12) Frame Skipping via MIN_FRAME_INTERVAL_MS
+
+- Choice: backend drops incoming frames if the previous frame was processed less than `MIN_FRAME_INTERVAL_MS` ago.
+- Benefit: prevents backend queue buildup on slow hardware; reduces CPU load without changing frontend send rate.
+- Cost: dropped frames are invisible to the frontend — no explicit feedback. Effective FPS may drop below the frontend send rate.
+- Rejected alternative: frontend-side adaptive send rate — harder to implement, requires backend→frontend feedback loop.

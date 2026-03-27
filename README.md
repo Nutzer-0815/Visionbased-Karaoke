@@ -126,6 +126,9 @@ Optional: `backend/.env` anlegen:
 | `RECOGNITION_THRESHOLD` | `0.4` | Cosine-Similarity-Schwellenwert für Wiedererkennung |
 | `IDENTITY_STORE_PATH` | `data/identities.json` | Pfad zum Identitäten-Store |
 | `LOG_LEVEL` | `INFO` | Log-Level |
+| `YOLO_DEVICE` | `auto` | Inferenz-Gerät: `auto` (CUDA falls verfügbar, sonst CPU), `cpu`, `0` (GPU 0) |
+| `USE_BYTETRACK` | `0` | `1` = ByteTrack statt IOU-Tracker (stabiler bei Verdeckungen) |
+| `MIN_FRAME_INTERVAL_MS` | `0` | Minimaler Abstand zwischen verarbeiteten Frames in ms (`0` = deaktiviert) |
 
 ---
 

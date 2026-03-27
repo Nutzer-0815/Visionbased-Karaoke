@@ -1,6 +1,6 @@
 ﻿# Roadmap
 
-**Status:** Phase 0-8 Completed
+**Status:** Phase 0-9 Completed
 **Last updated:** 2026-03-19
 
 This document defines the **development roadmap**
@@ -179,13 +179,31 @@ It is the **single source of truth** for development order and scope progression
 
 ---
 
+## Phase 9 — Performance Optimizations
+
+**Goal:** Reduce inference latency and improve tracking stability on a range of hardware.
+
+**Focus:**
+
+- GPU auto-detection at startup (`YOLO_DEVICE=auto` → CUDA if available, else CPU)
+- ByteTrack integration via ultralytics' built-in tracker (`USE_BYTETRACK=1`)
+- Frame skipping to prevent backend queue buildup on slow hardware (`MIN_FRAME_INTERVAL_MS`)
+- All features opt-in via environment variables; defaults preserve existing behavior
+
+**Outcome:**
+
+- GPU-equipped machines benefit automatically without any configuration
+- ByteTrack provides more stable track IDs under temporary occlusions
+- Slow hardware can shed load without frontend changes
+
+---
+
 ## Post-MVP (Optional / Future Work)
 
 These items are **explicitly not required** for current completion:
 
 - Additional songs and media management
 - Cloud deployment
-- Performance optimizations (GPU inference, ByteTrack, frame skipping)
 - buffalo_s → buffalo_l upgrade for higher recognition accuracy
 - Accessory drawing overlay (hat, glasses etc.) anchored to facial landmarks
 
@@ -195,6 +213,6 @@ These items are **explicitly not required** for current completion:
 
 The roadmap is considered complete when:
 
-- All implementation phases (0-8) are finished
+- All implementation phases (0-9) are finished
 - MVP acceptance criteria are met
 - Documentation reflects the implemented system

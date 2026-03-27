@@ -157,6 +157,29 @@ Recognition is opt-in per session; embeddings are only stored on explicit user c
 
 ---
 
+### Performance Optimizations (Phase 9)
+
+Three opt-in backend performance features, all controlled via environment variables:
+
+| Feature | Env Var | Default | Effect |
+|---|---|---|---|
+| GPU inference | `YOLO_DEVICE` | `auto` | Auto-selects CUDA if available, else CPU |
+| ByteTrack | `USE_BYTETRACK` | `0` | Replaces IOU greedy tracker with ByteTrack |
+| Frame skipping | `MIN_FRAME_INTERVAL_MS` | `0` | Drops frames arriving faster than threshold |
+
+**Rationale**
+
+- GPU: resolves at startup via `torch.cuda.is_available()`; zero config for most users
+- ByteTrack: better ID stability under occlusion; uses ultralytics' built-in tracker state
+- Frame skipping: protects slow hardware from queue buildup without changing the frontend
+
+**Trade-offs**
+
+- ByteTrack state is stored globally in the model's predictor — only safe for single-connection use (documented limitation)
+- Frame skipping drops frames silently — no frontend feedback on dropped frames
+
+---
+
 ### Pitch Detection: Chroma-Based Scoring (Browser-Only)
 
 Pitch detection runs entirely in the browser via Web Audio API (`AudioContext`, `AnalyserNode`, autocorrelation on a 2048-sample buffer at 80 ms intervals). Accuracy is evaluated using **chroma-based distance** (pitch class modulo 12 semitones), making scoring octave-independent.
@@ -204,7 +227,5 @@ The following are **not part of this project**:
 
 ## 6. Open Questions / Future Work
 
-- Compare tracking approaches (simple IOU vs ByteTrack)
-- Evaluate frame skipping vs detection accuracy
 - Optional ONNX export for future client-side inference
 - buffalo_s → buffalo_l upgrade path for higher recognition accuracy
