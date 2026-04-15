@@ -716,6 +716,29 @@ video, canvas {
 
 canvas { pointer-events: auto; cursor: crosshair; }
 
+/* ── Doodle toolbar ── */
+.doodle-toolbar { flex-wrap: wrap; gap: 8px; }
+
+.doodle-color-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: transform 0.1s;
+}
+.doodle-color-btn:hover { transform: scale(1.2); }
+
+.preset-saved-msg {
+  font-size: 13px;
+  color: var(--accent);
+  padding: 4px 8px;
+  background: var(--hint-bg);
+  border-radius: var(--radius-sm);
+}
+
 .hint {
   padding: 14px 16px;
   border-radius: var(--radius);

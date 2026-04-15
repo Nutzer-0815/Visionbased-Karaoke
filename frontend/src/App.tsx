@@ -30,6 +30,9 @@ type Detection = {
   suggested_name?: string;
 };
 
+type DoodlePoint = { dx: number; dy: number };
+type DoodleStroke = { points: DoodlePoint[]; color: string; lineWidth: number };
+
 type DetectionsMessage = {
   type: 'detections';
   boxes: Detection[];
@@ -236,6 +239,43 @@ function drawPitchBar(
   ctx.stroke();
 }
 
+function getBoxAnchor(box: Detection, scaleX: number, scaleY: number) {
+  return {
+    ax: ((box.x1 + box.x2) / 2) * scaleX,
+    ay: box.y1 * scaleY,
+  };
+}
+
+function renderDoodles(
+  ctx: CanvasRenderingContext2D,
+  doodles: Record<number, DoodleStroke[]>,
+  detections: Detection[],
+  scaleX: number,
+  scaleY: number,
+  activeStroke: { trackId: number; points: DoodlePoint[] } | null,
+) {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  detections.forEach((box) => {
+    const { ax, ay } = getBoxAnchor(box, scaleX, scaleY);
+    const strokes = doodles[box.track_id] ?? [];
+    const all: DoodleStroke[] =
+      activeStroke?.trackId === box.track_id
+        ? [...strokes, { points: activeStroke.points, color: '#ff3b30', lineWidth: 3 }]
+        : strokes;
+    all.forEach((stroke) => {
+      if (stroke.points.length < 2) return;
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.lineWidth;
+      ctx.beginPath();
+      ctx.moveTo(ax + stroke.points[0].dx, ay + stroke.points[0].dy);
+      stroke.points.slice(1).forEach((p) => ctx.lineTo(ax + p.dx, ay + p.dy));
+      ctx.stroke();
+    });
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COPY = {
@@ -296,6 +336,60 @@ function App() {
   const pitchDetectorRef = useRef<PitchDetector | null>(null);
   const detectedPitchRef = useRef<number | null>(null);
   const trackNotesRef = useRef<Record<number, NoteEntry[]>>({});
+
+  // ── Doodle state ──────────────────────────────────────────────────────────
+  const DOODLE_COLORS = ['#ff3b30', '#ff9f0a', '#ffd60a', '#30d158', '#0a84ff', '#bf5af2', '#ffffff'];
+  const [drawMode, setDrawMode] = useState(false);
+  const [doodleColor, setDoodleColor] = useState(DOODLE_COLORS[0]);
+  const [doodles, setDoodles] = useState<Record<number, DoodleStroke[]>>({});
+  const doodlesRef = useRef<Record<number, DoodleStroke[]>>({});
+  const activeStrokeRef = useRef<{ trackId: number; points: DoodlePoint[]; color: string; lineWidth: number } | null>(null);
+  const doodleCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const frameSizeRef = useRef<{ width: number; height: number } | null>(null);
+  const detectionsRef = useRef<Detection[]>([]);
+  const doodleColorRef = useRef(doodleColor);
+  useEffect(() => { doodlesRef.current = doodles; }, [doodles]);
+  useEffect(() => { doodleColorRef.current = doodleColor; }, [doodleColor]);
+  useEffect(() => { detectionsRef.current = detections; }, [detections]);
+  useEffect(() => { frameSizeRef.current = frameSize; }, [frameSize]);
+
+  // ── Doodle presets (localStorage) ────────────────────────────────────────
+  const PRESET_KEY = 'facekaraoke:doodle-presets';
+  const loadPresets = (): Record<string, DoodleStroke[]> => {
+    try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '{}'); } catch { return {}; }
+  };
+  const [doodlePresets, setDoodlePresets] = useState<Record<string, DoodleStroke[]>>(loadPresets);
+  const [presetSavedMsg, setPresetSavedMsg] = useState<string | null>(null);
+
+  const savePreset = useCallback((name: string, trackId: number) => {
+    const strokes = doodlesRef.current[trackId] ?? [];
+    setDoodlePresets((prev) => {
+      const next = { ...prev, [name]: strokes };
+      localStorage.setItem(PRESET_KEY, JSON.stringify(next));
+      return next;
+    });
+    setPresetSavedMsg(`Zeichnung für „${name}" gespeichert.`);
+    window.setTimeout(() => setPresetSavedMsg(null), 2500);
+  }, []);
+
+  const applyPreset = useCallback((name: string, trackId: number) => {
+    setDoodlePresets((prev) => {
+      const strokes = prev[name];
+      if (strokes && strokes.length > 0) {
+        setDoodles((d) => ({ ...d, [trackId]: strokes }));
+      }
+      return prev;
+    });
+  }, []);
+
+  const deletePreset = useCallback((name: string) => {
+    setDoodlePresets((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      localStorage.setItem(PRESET_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics>({
     samples: 0,
@@ -670,6 +764,19 @@ function App() {
         });
         return changed ? next : prev;
       });
+      setDoodles((prev) => {
+        let changed = false;
+        const next = { ...prev };
+        Object.keys(prev).forEach((trackIdRaw) => {
+          const trackId = Number(trackIdRaw);
+          const lastSeen = lastSeenRef.current[trackId];
+          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
+            delete next[trackId];
+            changed = true;
+          }
+        });
+        return changed ? next : prev;
+      });
     }, 500);
 
     return () => {
@@ -691,7 +798,11 @@ function App() {
       }
       return next;
     });
-  }, [selectedTrackId, nameInput]);
+    // Auto-load preset if one exists for this name
+    if (trimmed.length > 0) {
+      applyPreset(trimmed, selectedTrackId);
+    }
+  }, [selectedTrackId, nameInput, applyPreset]);
 
   const assignSong = useCallback(async () => {
     if (selectedTrackId === null || !selectedSongId) {
@@ -1006,7 +1117,9 @@ function App() {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ type: 'confirm_identity', track_id: trackId, name }));
     setSuggestions((prev) => { const next = { ...prev }; delete next[trackId]; return next; });
-  }, []);
+    // Auto-load preset if one exists for this name
+    applyPreset(name, trackId);
+  }, [applyPreset]);
 
   const dismissSuggestion = useCallback((trackId: number) => {
     setSuggestions((prev) => { const next = { ...prev }; delete next[trackId]; return next; });
@@ -1016,6 +1129,87 @@ function App() {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     ws.send(JSON.stringify({ type: 'delete_identity', name }));
+  }, []);
+
+  // ── Doodle canvas re-render ───────────────────────────────────────────────
+  useEffect(() => {
+    const canvas = doodleCanvasRef.current;
+    if (!canvas || !frameSize) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    canvas.width = canvasRef.current?.width ?? canvas.width;
+    canvas.height = canvasRef.current?.height ?? canvas.height;
+    const scaleX = canvas.width / frameSize.width;
+    const scaleY = canvas.height / frameSize.height;
+    renderDoodles(ctx, doodles, detections, scaleX, scaleY, null);
+  }, [doodles, detections, frameSize]);
+
+  // ── Doodle pointer events ─────────────────────────────────────────────────
+  const handleDoodlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = doodleCanvasRef.current;
+    const fs = frameSizeRef.current;
+    if (!canvas || !fs) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const scaleX = canvas.width / fs.width;
+    const scaleY = canvas.height / fs.height;
+    // Find closest face anchor within 200px
+    let best: Detection | null = null;
+    let bestDist = 200;
+    detectionsRef.current.forEach((box) => {
+      const { ax, ay } = getBoxAnchor(box, scaleX, scaleY);
+      const d = Math.hypot(cx - ax, cy - ay);
+      if (d < bestDist) { bestDist = d; best = box; }
+    });
+    if (!best) return;
+    const { ax, ay } = getBoxAnchor(best, scaleX, scaleY);
+    const stroke = {
+      trackId: (best as Detection).track_id,
+      points: [{ dx: cx - ax, dy: cy - ay }],
+      color: doodleColorRef.current,
+      lineWidth: 3,
+    };
+    activeStrokeRef.current = stroke;
+    canvas.setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleDoodlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!activeStrokeRef.current) return;
+    const canvas = doodleCanvasRef.current;
+    const fs = frameSizeRef.current;
+    if (!canvas || !fs) return;
+    const rect = canvas.getBoundingClientRect();
+    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const scaleX = canvas.width / fs.width;
+    const scaleY = canvas.height / fs.height;
+    const trackId = activeStrokeRef.current.trackId;
+    const box = detectionsRef.current.find((b) => b.track_id === trackId);
+    if (!box) return;
+    const { ax, ay } = getBoxAnchor(box, scaleX, scaleY);
+    activeStrokeRef.current.points.push({ dx: cx - ax, dy: cy - ay });
+    // Live preview
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    renderDoodles(ctx, doodlesRef.current, detectionsRef.current, scaleX, scaleY, {
+      trackId,
+      points: activeStrokeRef.current.points,
+    });
+  }, []);
+
+  const handleDoodlePointerUp = useCallback(() => {
+    const stroke = activeStrokeRef.current;
+    if (!stroke) return;
+    activeStrokeRef.current = null;
+    if (stroke.points.length < 2) return;
+    setDoodles((prev) => ({
+      ...prev,
+      [stroke.trackId]: [
+        ...(prev[stroke.trackId] ?? []),
+        { points: stroke.points, color: stroke.color, lineWidth: stroke.lineWidth },
+      ],
+    }));
   }, []);
 
   const toggleMic = useCallback(async () => {
@@ -1266,12 +1460,85 @@ function App() {
         </section>
       )}
 
+      <section className="controls doodle-toolbar">
+        <button
+          className={`ghost${drawMode ? ' active' : ''}`}
+          onClick={() => setDrawMode((m) => !m)}
+          title="Kritzelmodus ein/aus"
+        >
+          {drawMode ? 'Zeichnen: AN' : 'Zeichnen: AUS'}
+        </button>
+        {drawMode && (
+          <>
+            {DOODLE_COLORS.map((c) => (
+              <button
+                key={c}
+                className="doodle-color-btn"
+                style={{ background: c, outline: c === doodleColor ? '2px solid white' : 'none' }}
+                onClick={() => setDoodleColor(c)}
+                title={c}
+              />
+            ))}
+            {selectedTrackId !== null && names[selectedTrackId] && (doodles[selectedTrackId]?.length ?? 0) > 0 && (
+              <button
+                className="ghost"
+                onClick={() => savePreset(names[selectedTrackId], selectedTrackId)}
+                title={`Zeichnung als Preset für „${names[selectedTrackId]}" speichern`}
+              >
+                💾 Speichern als „{names[selectedTrackId]}"
+              </button>
+            )}
+            <button
+              className="ghost"
+              onClick={() => setDoodles({})}
+              title="Alle Kritzeleien löschen"
+            >
+              Löschen
+            </button>
+          </>
+        )}
+        {presetSavedMsg && <span className="preset-saved-msg">{presetSavedMsg}</span>}
+      </section>
+
+      {Object.keys(doodlePresets).length > 0 && (
+        <section className="identity-panel">
+          <h2 className="identity-panel-title">Gespeicherte Zeichnungen</h2>
+          <ul className="identity-list">
+            {Object.keys(doodlePresets).map((name) => (
+              <li key={name} className="identity-item">
+                <span>{name} ({doodlePresets[name].length} Striche)</span>
+                <button
+                  className="ghost"
+                  disabled={selectedTrackId === null}
+                  onClick={() => selectedTrackId !== null && applyPreset(name, selectedTrackId)}
+                  title="Auf ausgewähltes Gesicht anwenden"
+                >
+                  Anwenden
+                </button>
+                <button className="ghost identity-delete" onClick={() => deletePreset(name)}>
+                  Löschen
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="identity-notice">Zeichnungen werden lokal im Browser gespeichert (localStorage).</p>
+        </section>
+      )}
+
       <section className="stage">
         <div className="video-wrap">
           <video ref={videoRef} playsInline muted />
-          <canvas ref={canvasRef} onClick={handleCanvasClick} />
+          <canvas ref={canvasRef} onClick={!drawMode ? handleCanvasClick : undefined} style={{ cursor: drawMode ? 'crosshair' : 'pointer' }} />
+          <canvas
+            ref={doodleCanvasRef}
+            style={{ cursor: drawMode ? 'crosshair' : 'none', pointerEvents: drawMode ? 'auto' : 'none' }}
+            onPointerDown={drawMode ? handleDoodlePointerDown : undefined}
+            onPointerMove={drawMode ? handleDoodlePointerMove : undefined}
+            onPointerUp={drawMode ? handleDoodlePointerUp : undefined}
+            onPointerLeave={drawMode ? handleDoodlePointerUp : undefined}
+          />
         </div>
-        <aside className="hint">{COPY.hint}</aside>
+        <aside className="hint">{drawMode ? 'Zeichne über ein Gesicht — Kritzeleien folgen dem Gesicht.' : COPY.hint}</aside>
       </section>
 
       <section className="karaoke">
