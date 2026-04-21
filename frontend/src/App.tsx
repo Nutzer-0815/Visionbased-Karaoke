@@ -239,6 +239,39 @@ function drawPitchBar(
   ctx.stroke();
 }
 
+const DOODLE_COLORS = ['#ff3b30', '#ff9f0a', '#ffd60a', '#30d158', '#0a84ff', '#bf5af2', '#ffffff'];
+const PRESET_KEY = 'facekaraoke:doodle-presets';
+
+function clientToCanvas(
+  clientX: number,
+  clientY: number,
+  canvas: HTMLCanvasElement,
+): { cx: number; cy: number } {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    cx: (clientX - rect.left) * (canvas.width / rect.width),
+    cy: (clientY - rect.top) * (canvas.height / rect.height),
+  };
+}
+
+function cleanupStale<T>(
+  prev: Record<number, T>,
+  lastSeen: Record<number, number>,
+  staleMs: number,
+): Record<number, T> {
+  let changed = false;
+  const next = { ...prev };
+  for (const key of Object.keys(prev)) {
+    const trackId = Number(key);
+    const seen = lastSeen[trackId];
+    if (!seen || Date.now() - seen > staleMs) {
+      delete next[trackId];
+      changed = true;
+    }
+  }
+  return changed ? next : prev;
+}
+
 function getBoxAnchor(box: Detection, scaleX: number, scaleY: number) {
   return {
     ax: ((box.x1 + box.x2) / 2) * scaleX,
@@ -252,7 +285,7 @@ function renderDoodles(
   detections: Detection[],
   scaleX: number,
   scaleY: number,
-  activeStroke: { trackId: number; points: DoodlePoint[] } | null,
+  activeStroke: { trackId: number; points: DoodlePoint[]; color: string; lineWidth: number } | null,
 ) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.lineCap = 'round';
@@ -262,7 +295,7 @@ function renderDoodles(
     const strokes = doodles[box.track_id] ?? [];
     const all: DoodleStroke[] =
       activeStroke?.trackId === box.track_id
-        ? [...strokes, { points: activeStroke.points, color: '#ff3b30', lineWidth: 3 }]
+        ? [...strokes, { points: activeStroke.points, color: activeStroke.color, lineWidth: activeStroke.lineWidth }]
         : strokes;
     all.forEach((stroke) => {
       if (stroke.points.length < 2) return;
@@ -270,7 +303,9 @@ function renderDoodles(
       ctx.lineWidth = stroke.lineWidth;
       ctx.beginPath();
       ctx.moveTo(ax + stroke.points[0].dx, ay + stroke.points[0].dy);
-      stroke.points.slice(1).forEach((p) => ctx.lineTo(ax + p.dx, ay + p.dy));
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(ax + stroke.points[i].dx, ay + stroke.points[i].dy);
+      }
       ctx.stroke();
     });
   });
@@ -338,7 +373,6 @@ function App() {
   const trackNotesRef = useRef<Record<number, NoteEntry[]>>({});
 
   // ── Doodle state ──────────────────────────────────────────────────────────
-  const DOODLE_COLORS = ['#ff3b30', '#ff9f0a', '#ffd60a', '#30d158', '#0a84ff', '#bf5af2', '#ffffff'];
   const [drawMode, setDrawMode] = useState(false);
   const [doodleColor, setDoodleColor] = useState(DOODLE_COLORS[0]);
   const [doodles, setDoodles] = useState<Record<number, DoodleStroke[]>>({});
@@ -348,45 +382,43 @@ function App() {
   const frameSizeRef = useRef<{ width: number; height: number } | null>(null);
   const detectionsRef = useRef<Detection[]>([]);
   const doodleColorRef = useRef(doodleColor);
-  useEffect(() => { doodlesRef.current = doodles; }, [doodles]);
-  useEffect(() => { doodleColorRef.current = doodleColor; }, [doodleColor]);
-  useEffect(() => { detectionsRef.current = detections; }, [detections]);
-  useEffect(() => { frameSizeRef.current = frameSize; }, [frameSize]);
+  useEffect(() => {
+    doodlesRef.current = doodles;
+    doodleColorRef.current = doodleColor;
+    detectionsRef.current = detections;
+    frameSizeRef.current = frameSize;
+  });
 
   // ── Doodle presets (localStorage) ────────────────────────────────────────
-  const PRESET_KEY = 'facekaraoke:doodle-presets';
-  const loadPresets = (): Record<string, DoodleStroke[]> => {
+  const [doodlePresets, setDoodlePresets] = useState<Record<string, DoodleStroke[]>>(() => {
     try { return JSON.parse(localStorage.getItem(PRESET_KEY) ?? '{}'); } catch { return {}; }
-  };
-  const [doodlePresets, setDoodlePresets] = useState<Record<string, DoodleStroke[]>>(loadPresets);
+  });
   const [presetSavedMsg, setPresetSavedMsg] = useState<string | null>(null);
+  const doodlePresetsRef = useRef(doodlePresets);
+  useEffect(() => { doodlePresetsRef.current = doodlePresets; }, [doodlePresets]);
+
+  useEffect(() => {
+    localStorage.setItem(PRESET_KEY, JSON.stringify(doodlePresets));
+  }, [doodlePresets]);
 
   const savePreset = useCallback((name: string, trackId: number) => {
     const strokes = doodlesRef.current[trackId] ?? [];
-    setDoodlePresets((prev) => {
-      const next = { ...prev, [name]: strokes };
-      localStorage.setItem(PRESET_KEY, JSON.stringify(next));
-      return next;
-    });
+    setDoodlePresets((prev) => ({ ...prev, [name]: strokes }));
     setPresetSavedMsg(`Zeichnung für „${name}" gespeichert.`);
     window.setTimeout(() => setPresetSavedMsg(null), 2500);
   }, []);
 
   const applyPreset = useCallback((name: string, trackId: number) => {
-    setDoodlePresets((prev) => {
-      const strokes = prev[name];
-      if (strokes && strokes.length > 0) {
-        setDoodles((d) => ({ ...d, [trackId]: strokes }));
-      }
-      return prev;
-    });
+    const strokes = doodlePresetsRef.current[name];
+    if (strokes && strokes.length > 0) {
+      setDoodles((d) => ({ ...d, [trackId]: strokes }));
+    }
   }, []);
 
   const deletePreset = useCallback((name: string) => {
     setDoodlePresets((prev) => {
       const next = { ...prev };
       delete next[name];
-      localStorage.setItem(PRESET_KEY, JSON.stringify(next));
       return next;
     });
   }, []);
@@ -738,45 +770,12 @@ function App() {
         }
       }
       setSongByTrack((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.keys(prev).forEach((trackIdRaw) => {
-          const trackId = Number(trackIdRaw);
-          const lastSeen = lastSeenRef.current[trackId];
-          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
-            delete next[trackId];
-            delete trackNotesRef.current[trackId];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
+        const next = cleanupStale(prev, lastSeenRef.current, TRACK_STALE_MS);
+        if (next !== prev) Object.keys(prev).forEach((k) => { if (!(Number(k) in next)) delete trackNotesRef.current[Number(k)]; });
+        return next;
       });
-      setSuggestions((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.keys(prev).forEach((trackIdRaw) => {
-          const trackId = Number(trackIdRaw);
-          const lastSeen = lastSeenRef.current[trackId];
-          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
-            delete next[trackId];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
-      setDoodles((prev) => {
-        let changed = false;
-        const next = { ...prev };
-        Object.keys(prev).forEach((trackIdRaw) => {
-          const trackId = Number(trackIdRaw);
-          const lastSeen = lastSeenRef.current[trackId];
-          if (!lastSeen || now - lastSeen > TRACK_STALE_MS) {
-            delete next[trackId];
-            changed = true;
-          }
-        });
-        return changed ? next : prev;
-      });
+      setSuggestions((prev) => cleanupStale(prev, lastSeenRef.current, TRACK_STALE_MS));
+      setDoodles((prev) => cleanupStale(prev, lastSeenRef.current, TRACK_STALE_MS));
     }, 500);
 
     return () => {
@@ -889,10 +888,7 @@ function App() {
       if (!canvas) {
         return;
       }
-      const rect = canvas.getBoundingClientRect();
-      const canvasX = (event.clientX - rect.left) * (canvas.width / rect.width);
-      const canvasY = (event.clientY - rect.top) * (canvas.height / rect.height);
-
+      const { cx: canvasX, cy: canvasY } = clientToCanvas(event.clientX, event.clientY, canvas);
       const scaleX = canvas.width / frameSize.width;
       const scaleY = canvas.height / frameSize.height;
 
@@ -1131,71 +1127,63 @@ function App() {
     ws.send(JSON.stringify({ type: 'delete_identity', name }));
   }, []);
 
-  // ── Doodle canvas re-render ───────────────────────────────────────────────
+  const doodleCtxRef = useRef<CanvasRenderingContext2D | null>(null);
+
   useEffect(() => {
     const canvas = doodleCanvasRef.current;
     if (!canvas || !frameSize) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    canvas.width = canvasRef.current?.width ?? canvas.width;
-    canvas.height = canvasRef.current?.height ?? canvas.height;
+    doodleCtxRef.current = ctx;
+    const targetW = canvasRef.current?.width ?? canvas.width;
+    const targetH = canvasRef.current?.height ?? canvas.height;
+    if (canvas.width !== targetW) canvas.width = targetW;
+    if (canvas.height !== targetH) canvas.height = targetH;
     const scaleX = canvas.width / frameSize.width;
     const scaleY = canvas.height / frameSize.height;
     renderDoodles(ctx, doodles, detections, scaleX, scaleY, null);
   }, [doodles, detections, frameSize]);
 
-  // ── Doodle pointer events ─────────────────────────────────────────────────
   const handleDoodlePointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = doodleCanvasRef.current;
     const fs = frameSizeRef.current;
     if (!canvas || !fs) return;
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const { cx, cy } = clientToCanvas(e.clientX, e.clientY, canvas);
     const scaleX = canvas.width / fs.width;
     const scaleY = canvas.height / fs.height;
-    // Find closest face anchor within 200px
     let best: Detection | null = null;
     let bestDist = 200;
-    detectionsRef.current.forEach((box) => {
+    for (const box of detectionsRef.current) {
       const { ax, ay } = getBoxAnchor(box, scaleX, scaleY);
       const d = Math.hypot(cx - ax, cy - ay);
       if (d < bestDist) { bestDist = d; best = box; }
-    });
+    }
     if (!best) return;
     const { ax, ay } = getBoxAnchor(best, scaleX, scaleY);
-    const stroke = {
-      trackId: (best as Detection).track_id,
+    activeStrokeRef.current = {
+      trackId: best.track_id,
       points: [{ dx: cx - ax, dy: cy - ay }],
       color: doodleColorRef.current,
       lineWidth: 3,
     };
-    activeStrokeRef.current = stroke;
     canvas.setPointerCapture(e.pointerId);
   }, []);
 
   const handleDoodlePointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!activeStrokeRef.current) return;
+    const stroke = activeStrokeRef.current;
+    if (!stroke) return;
     const canvas = doodleCanvasRef.current;
     const fs = frameSizeRef.current;
-    if (!canvas || !fs) return;
-    const rect = canvas.getBoundingClientRect();
-    const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const ctx = doodleCtxRef.current;
+    if (!canvas || !fs || !ctx) return;
+    const { cx, cy } = clientToCanvas(e.clientX, e.clientY, canvas);
     const scaleX = canvas.width / fs.width;
     const scaleY = canvas.height / fs.height;
-    const trackId = activeStrokeRef.current.trackId;
-    const box = detectionsRef.current.find((b) => b.track_id === trackId);
+    const box = detectionsRef.current.find((b) => b.track_id === stroke.trackId);
     if (!box) return;
     const { ax, ay } = getBoxAnchor(box, scaleX, scaleY);
-    activeStrokeRef.current.points.push({ dx: cx - ax, dy: cy - ay });
-    // Live preview
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    renderDoodles(ctx, doodlesRef.current, detectionsRef.current, scaleX, scaleY, {
-      trackId,
-      points: activeStrokeRef.current.points,
-    });
+    stroke.points.push({ dx: cx - ax, dy: cy - ay });
+    renderDoodles(ctx, doodlesRef.current, detectionsRef.current, scaleX, scaleY, stroke);
   }, []);
 
   const handleDoodlePointerUp = useCallback(() => {
@@ -1528,14 +1516,18 @@ function App() {
       <section className="stage">
         <div className="video-wrap">
           <video ref={videoRef} playsInline muted />
-          <canvas ref={canvasRef} onClick={!drawMode ? handleCanvasClick : undefined} style={{ cursor: drawMode ? 'crosshair' : 'pointer' }} />
+          <canvas
+            ref={canvasRef}
+            onClick={handleCanvasClick}
+            style={{ cursor: drawMode ? 'crosshair' : 'pointer' }}
+          />
           <canvas
             ref={doodleCanvasRef}
-            style={{ cursor: drawMode ? 'crosshair' : 'none', pointerEvents: drawMode ? 'auto' : 'none' }}
-            onPointerDown={drawMode ? handleDoodlePointerDown : undefined}
-            onPointerMove={drawMode ? handleDoodlePointerMove : undefined}
-            onPointerUp={drawMode ? handleDoodlePointerUp : undefined}
-            onPointerLeave={drawMode ? handleDoodlePointerUp : undefined}
+            style={{ pointerEvents: drawMode ? 'auto' : 'none' }}
+            onPointerDown={handleDoodlePointerDown}
+            onPointerMove={handleDoodlePointerMove}
+            onPointerUp={handleDoodlePointerUp}
+            onPointerLeave={handleDoodlePointerUp}
           />
         </div>
         <aside className="hint">{drawMode ? 'Zeichne über ein Gesicht — Kritzeleien folgen dem Gesicht.' : COPY.hint}</aside>
