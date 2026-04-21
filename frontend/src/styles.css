@@ -278,6 +278,277 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   ANIME THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="anime"] {
+  --bg: #fff0fa;
+  --bg-body: radial-gradient(ellipse at top left, #ffd6f0 0%, #fff0fa 45%, #f0e8ff 100%);
+  --surface: #ffffff;
+  --surface-2: #ffeaf6;
+  --surface-3: #fff5fc;
+  --text: #3d0030;
+  --text-muted: #b0006e;
+  --text-subtle: #d060a0;
+  --border: #ffaee0;
+  --border-strong: #ff72c3;
+  --border-hover: #ff1fa8;
+  --accent: #ff1fa8;
+  --accent-text: #ffffff;
+  --accent-shadow: rgba(255, 31, 168, 0.34);
+  --accent-shadow-hover: rgba(255, 31, 168, 0.52);
+  --focus-ring: rgba(255, 31, 168, 0.18);
+  --status-on-bg: #d1fae5;   --status-on-text: #065f46;
+  --status-off-bg: #ffe4e6;  --status-off-text: #9f1239;
+  --status-conn-bg: #fef9c3; --status-conn-text: #713f12;
+  --hint-bg: #ffeaf6;        --hint-text: #b0006e;
+  --hint-border: rgba(176, 0, 110, 0.14);
+  --lyric-active-text: #ff1fa8;
+  --lyric-active-bg: #fff0fa;
+  --lyric-active-border: #ff1fa8;
+  --input-bg: #ffffff;
+  --radius: 20px;
+  --radius-sm: 14px;
+}
+
+[data-theme="anime"] body {
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255, 120, 220, 0.25) 0%, transparent 35%),
+    radial-gradient(circle at 90% 15%, rgba(200, 120, 255, 0.2) 0%, transparent 35%),
+    radial-gradient(circle at 50% 85%, rgba(255, 160, 230, 0.18) 0%, transparent 40%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DUNGEON THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="dungeon"] {
+  --font: "Georgia", "Palatino Linotype", serif;
+  --bg: #060008;
+  --bg-body: radial-gradient(ellipse at top, #150020 0%, #060008 60%, #000000 100%);
+  --surface: #110018;
+  --surface-2: #0c0010;
+  --surface-3: #180020;
+  --text: #c8a0e0;
+  --text-muted: #8a5aaa;
+  --text-subtle: #603878;
+  --border: #3a1050;
+  --border-strong: #5a1878;
+  --border-hover: #9900cc;
+  --accent: #8b0000;
+  --accent-text: #ffdddd;
+  --accent-shadow: rgba(139, 0, 0, 0.5);
+  --accent-shadow-hover: rgba(139, 0, 0, 0.7);
+  --focus-ring: rgba(139, 0, 0, 0.28);
+  --status-on-bg: #051205;   --status-on-text: #4dff80;
+  --status-off-bg: #180005;  --status-off-text: #ff3a3a;
+  --status-conn-bg: #150a00; --status-conn-text: #ff9020;
+  --hint-bg: #110018;        --hint-text: #8a5aaa;
+  --hint-border: rgba(139, 0, 0, 0.18);
+  --lyric-active-text: #ff4444;
+  --lyric-active-bg: #110018;
+  --lyric-active-border: #8b0000;
+  --input-bg: #0c0010;
+  --radius: 3px;
+  --radius-sm: 2px;
+}
+
+[data-theme="dungeon"] body {
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 25%, rgba(100, 0, 160, 0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 50% at 80% 75%, rgba(139, 0, 0, 0.2) 0%, transparent 60%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px, transparent 48px,
+      rgba(255, 255, 255, 0.012) 48px, rgba(255, 255, 255, 0.012) 50px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px, transparent 48px,
+      rgba(255, 255, 255, 0.008) 48px, rgba(255, 255, 255, 0.008) 50px
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ULTRA MODERN THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="ultramodern"] {
+  --font: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --bg: #07080f;
+  --bg-body: #07080f;
+  --surface: rgba(255, 255, 255, 0.055);
+  --surface-2: rgba(255, 255, 255, 0.025);
+  --surface-3: rgba(255, 255, 255, 0.08);
+  --text: #eeeeff;
+  --text-muted: #9898c8;
+  --text-subtle: #6060a0;
+  --border: rgba(140, 140, 220, 0.14);
+  --border-strong: rgba(140, 140, 220, 0.28);
+  --border-hover: rgba(120, 120, 255, 0.55);
+  --accent: #6366f1;
+  --accent-text: #ffffff;
+  --accent-shadow: rgba(99, 102, 241, 0.42);
+  --accent-shadow-hover: rgba(99, 102, 241, 0.62);
+  --focus-ring: rgba(99, 102, 241, 0.22);
+  --status-on-bg: rgba(16, 185, 129, 0.14);  --status-on-text: #34d399;
+  --status-off-bg: rgba(239, 68, 68, 0.12);  --status-off-text: #f87171;
+  --status-conn-bg: rgba(245, 158, 11, 0.12); --status-conn-text: #fbbf24;
+  --hint-bg: rgba(255, 255, 255, 0.04);  --hint-text: #9898c8;
+  --hint-border: rgba(140, 140, 220, 0.1);
+  --lyric-active-text: #a5b4fc;
+  --lyric-active-bg: rgba(99, 102, 241, 0.08);
+  --lyric-active-border: #6366f1;
+  --input-bg: rgba(255, 255, 255, 0.055);
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+[data-theme="ultramodern"] body {
+  background-image:
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(99, 102, 241, 0.22) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 65% at 85% 70%, rgba(168, 85, 247, 0.18) 0%, transparent 65%),
+    radial-gradient(ellipse 45% 45% at 55% 5%,  rgba(14, 165, 233, 0.12) 0%, transparent 55%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Y2K / AQUA THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="y2k"] {
+  --font: "Tahoma", "Arial Narrow", system-ui, sans-serif;
+  --bg: #1055b0;
+  --bg-body: linear-gradient(180deg, #1a72e0 0%, #1055b0 40%, #0840a0 70%, #062888 100%);
+  --surface: #d8edff;
+  --surface-2: #b8d8f8;
+  --surface-3: #e4f3ff;
+  --text: #001e5c;
+  --text-muted: #003888;
+  --text-subtle: #1a5ab0;
+  --border: #6aaae8;
+  --border-strong: #2080e0;
+  --border-hover: #0040c0;
+  --accent: #1a6cd8;
+  --accent-text: #ffffff;
+  --accent-shadow: rgba(26, 108, 216, 0.5);
+  --accent-shadow-hover: rgba(26, 108, 216, 0.7);
+  --focus-ring: rgba(26, 108, 216, 0.28);
+  --status-on-bg: #ccf0d0;   --status-on-text: #005500;
+  --status-off-bg: #ffd8d8;  --status-off-text: #880000;
+  --status-conn-bg: #fffbd0; --status-conn-text: #888800;
+  --hint-bg: #e4f3ff;        --hint-text: #003888;
+  --hint-border: rgba(26, 108, 216, 0.22);
+  --lyric-active-text: #1a6cd8;
+  --lyric-active-bg: #d8edff;
+  --lyric-active-border: #1a6cd8;
+  --input-bg: #ffffff;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+[data-theme="y2k"] body {
+  background-image:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.0) 50%,
+      rgba(0, 0, 0, 0.1) 100%),
+    radial-gradient(ellipse 80% 30% at 50% 0%, rgba(180, 220, 255, 0.4) 0%, transparent 100%);
+}
+
+/* Glossy reflective surfaces in Y2K */
+[data-theme="y2k"] .surface,
+[data-theme="y2k"] .controls,
+[data-theme="y2k"] .metrics-panel,
+[data-theme="y2k"] .name-editor,
+[data-theme="y2k"] .karaoke {
+  background-image: linear-gradient(180deg,
+    rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.0) 45%,
+    rgba(255, 255, 255, 0.0) 55%, rgba(200, 220, 255, 0.2) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VAPORWAVE THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="vaporwave"] {
+  --bg: #08001c;
+  --bg-body: linear-gradient(180deg, #12003a 0%, #200055 25%, #08001c 60%, #040010 100%);
+  --surface: #1a0040;
+  --surface-2: #110028;
+  --surface-3: #220055;
+  --text: #ff71ce;
+  --text-muted: #b967ff;
+  --text-subtle: #7840a8;
+  --border: #4400aa;
+  --border-strong: #8800ff;
+  --border-hover: #ff71ce;
+  --accent: #01cdfe;
+  --accent-text: #08001c;
+  --accent-shadow: rgba(1, 205, 254, 0.42);
+  --accent-shadow-hover: rgba(1, 205, 254, 0.62);
+  --focus-ring: rgba(1, 205, 254, 0.22);
+  --status-on-bg: #002a10;   --status-on-text: #05ffa1;
+  --status-off-bg: #200010;  --status-off-text: #ff71ce;
+  --status-conn-bg: #1a0030; --status-conn-text: #b967ff;
+  --hint-bg: #1a0040;        --hint-text: #b967ff;
+  --hint-border: rgba(137, 0, 255, 0.22);
+  --lyric-active-text: #fffb96;
+  --lyric-active-bg: #1a0040;
+  --lyric-active-border: #01cdfe;
+  --input-bg: #1a0040;
+  --radius: 0px;
+  --radius-sm: 0px;
+}
+
+[data-theme="vaporwave"] body {
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% 100%,  rgba(255, 0, 128, 0.35) 0%, transparent 70%),
+    linear-gradient(90deg,  rgba(180, 0, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(0deg,   rgba(180, 0, 255, 0.07) 1px, transparent 1px);
+  background-size: 100%, 44px 44px, 44px 44px;
+  background-position: 0 0, 0 0, 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAVA THEME
+═══════════════════════════════════════════════════════════════ */
+[data-theme="lava"] {
+  --bg: #160400;
+  --bg-body: radial-gradient(ellipse at bottom, #3a0600 0%, #160400 50%, #080100 100%);
+  --surface: #2a0700;
+  --surface-2: #1c0400;
+  --surface-3: #360900;
+  --text: #ffd0a0;
+  --text-muted: #ff7700;
+  --text-subtle: #cc4400;
+  --border: #4d1200;
+  --border-strong: #842000;
+  --border-hover: #ff4400;
+  --accent: #ff4500;
+  --accent-text: #ffffff;
+  --accent-shadow: rgba(255, 69, 0, 0.48);
+  --accent-shadow-hover: rgba(255, 69, 0, 0.68);
+  --focus-ring: rgba(255, 69, 0, 0.28);
+  --status-on-bg: #001805;   --status-on-text: #00ee44;
+  --status-off-bg: #180005;  --status-off-text: #ff3333;
+  --status-conn-bg: #1a0a00; --status-conn-text: #ffaa00;
+  --hint-bg: #2a0700;        --hint-text: #ff7700;
+  --hint-border: rgba(255, 69, 0, 0.2);
+  --lyric-active-text: #ffaa00;
+  --lyric-active-bg: #2a0700;
+  --lyric-active-border: #ff4500;
+  --input-bg: #2a0700;
+  --radius: 4px;
+  --radius-sm: 2px;
+}
+
+[data-theme="lava"] body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(255, 80, 0, 0.3) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 30% at 20% 80%,  rgba(200, 30, 0, 0.25) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 30% at 80% 85%,  rgba(220, 60, 0, 0.22) 0%, transparent 55%),
+    repeating-linear-gradient(
+      175deg,
+      transparent 0px, transparent 60px,
+      rgba(255, 60, 0, 0.04) 60px, rgba(255, 60, 0, 0.04) 62px
+    );
+}
+
+/* ═══════════════════════════════════════════════════════════════
    BASE STYLES
 ═══════════════════════════════════════════════════════════════ */
 
@@ -681,13 +952,19 @@ button.identity-delete:hover:not(:disabled) { background: var(--status-off-bg); 
   flex-shrink: 0;
 }
 
-.theme-option--light     .theme-option-label::before { background: #0ea5e9; }
-.theme-option--dark      .theme-option-label::before { background: #1e293b; border: 1.5px solid #38bdf8; }
-.theme-option--hacker    .theme-option-label::before { background: #00ff41; }
-.theme-option--nintendo  .theme-option-label::before { background: #e60012; }
-.theme-option--manga     .theme-option-label::before { background: #cc0000; border: 1.5px solid #000; }
-.theme-option--pink      .theme-option-label::before { background: #ec4899; }
-.theme-option--wirtshaus .theme-option-label::before { background: #7a5230; }
+.theme-option--light       .theme-option-label::before { background: #0ea5e9; }
+.theme-option--dark        .theme-option-label::before { background: #1e293b; border: 1.5px solid #38bdf8; }
+.theme-option--hacker      .theme-option-label::before { background: #00ff41; }
+.theme-option--nintendo    .theme-option-label::before { background: #e60012; }
+.theme-option--manga       .theme-option-label::before { background: #cc0000; border: 1.5px solid #000; }
+.theme-option--pink        .theme-option-label::before { background: #ec4899; }
+.theme-option--wirtshaus   .theme-option-label::before { background: #7a5230; }
+.theme-option--anime       .theme-option-label::before { background: linear-gradient(135deg, #ff1fa8, #c878ff); }
+.theme-option--dungeon     .theme-option-label::before { background: #8b0000; border: 1.5px solid #9900cc; }
+.theme-option--ultramodern .theme-option-label::before { background: linear-gradient(135deg, #6366f1, #a855f7); }
+.theme-option--y2k         .theme-option-label::before { background: linear-gradient(180deg, #7ac0ff, #1a6cd8); }
+.theme-option--vaporwave   .theme-option-label::before { background: linear-gradient(135deg, #01cdfe, #b967ff); }
+.theme-option--lava        .theme-option-label::before { background: linear-gradient(180deg, #ff6600, #8b0000); }
 
 /* ── Stage ── */
 
