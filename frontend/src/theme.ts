@@ -13,7 +13,9 @@ export type ThemeId =
   | 'ultramodern'
   | 'y2k'
   | 'vaporwave'
-  | 'lava';
+  | 'lava'
+  | 'rennbahn'
+  | 'geocities';
 
 export const THEMES: { id: ThemeId; label: string; description: string }[] = [
   { id: 'light',       label: 'Standard',      description: 'Hell, klassisch'             },
@@ -29,6 +31,8 @@ export const THEMES: { id: ThemeId; label: string; description: string }[] = [
   { id: 'y2k',         label: 'Y2K / Aqua',   description: '2000er Glanz, Windows-XP'    },
   { id: 'vaporwave',   label: 'Vaporwave',     description: 'Synthwave-Grid, Lila & Cyan' },
   { id: 'lava',        label: 'Lava',          description: 'Vulkan-Glut, tiefes Rot'     },
+  { id: 'rennbahn',   label: 'Rennbahn',      description: 'Kart-Racing, Regenbogenpiste' },
+  { id: 'geocities',  label: 'Geocities',     description: 'Schlechtes 2003-Web, Comic Sans'},
 ];
 
 const STORAGE_KEY = 'face-karaoke-theme';

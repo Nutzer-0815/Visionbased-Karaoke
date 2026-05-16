@@ -549,6 +549,120 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   RENNBAHN THEME  (Kart-Racing, Regenbogenpiste)
+═══════════════════════════════════════════════════════════════ */
+[data-theme="rennbahn"] {
+  --font: "Impact", "Arial Black", "Arial", sans-serif;
+  --bg: #1a90ff;
+  --bg-body: linear-gradient(180deg, #4ab8ff 0%, #1a90ff 35%, #0060d0 70%, #004090 100%);
+  --surface: #fff9d0;
+  --surface-2: #fff0a0;
+  --surface-3: #fffbe8;
+  --text: #1a0050;
+  --text-muted: #5c0080;
+  --text-subtle: #0040a0;
+  --border: #1a0050;
+  --border-strong: #1a0050;
+  --border-hover: #ff2200;
+  --accent: #ff2200;
+  --accent-text: #ffffff;
+  --accent-shadow: rgba(255, 34, 0, 0.4);
+  --accent-shadow-hover: rgba(255, 34, 0, 0.6);
+  --focus-ring: rgba(255, 34, 0, 0.22);
+  --status-on-bg: #ccffcc;   --status-on-text: #004400;
+  --status-off-bg: #ffcccc;  --status-off-text: #880000;
+  --status-conn-bg: #ffffaa; --status-conn-text: #886600;
+  --hint-bg: #fff9d0;        --hint-text: #1a0050;
+  --hint-border: rgba(26, 0, 80, 0.18);
+  --lyric-active-text: #ff2200;
+  --lyric-active-bg: #fff9d0;
+  --lyric-active-border: #ff2200;
+  --input-bg: #ffffff;
+  --radius: 8px;
+  --radius-sm: 5px;
+}
+
+/* Regenbogen-Bodenstreifen + Wolken-Gradient */
+[data-theme="rennbahn"] body {
+  background-image:
+    /* Regenbogenstreifen oben */
+    linear-gradient(90deg,
+      #ff0000 0%, #ff6600 14.2%, #ffcc00 28.5%,
+      #00cc00 42.8%, #0088ff 57.1%, #8800ff 71.4%,
+      #ff00aa 85.7%, #ff0000 100%),
+    /* Wolkenhimmel */
+    radial-gradient(ellipse 70% 35% at 50% 0%, rgba(255,255,255,0.55) 0%, transparent 100%),
+    radial-gradient(ellipse 30% 20% at 20% 12%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(ellipse 25% 18% at 75% 8%,  rgba(255,255,255,0.45) 0%, transparent 100%);
+  background-size: 100% 8px, 100%, 100%, 100%;
+  background-repeat: no-repeat;
+  background-position: top, center, center, center;
+}
+
+/* Schachbrett-Rahmen auf Karten/Surfaces */
+[data-theme="rennbahn"] .metrics-panel,
+[data-theme="rennbahn"] .name-editor,
+[data-theme="rennbahn"] .karaoke {
+  border-image:
+    repeating-conic-gradient(#1a0050 0% 25%, #fff9d0 0% 50%) 0 0 0 6px / 6px stretch;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GEOCITIES THEME  (Schlechtes 2003-Web)
+═══════════════════════════════════════════════════════════════ */
+[data-theme="geocities"] {
+  --font: "Comic Sans MS", "Comic Sans", "Chalkboard SE", cursive;
+  --bg: #000080;
+  --bg-body: #000080;
+  --surface: #c0c0c0;
+  --surface-2: #a8a8a8;
+  --surface-3: #d8d8d8;
+  --text: #ffff00;
+  --text-muted: #00ffff;
+  --text-subtle: #ff00ff;
+  --border: #ffffff;
+  --border-strong: #ffff00;
+  --border-hover: #00ffff;
+  --accent: #ff00ff;
+  --accent-text: #000000;
+  --accent-shadow: rgba(255, 0, 255, 0.5);
+  --accent-shadow-hover: rgba(255, 0, 255, 0.75);
+  --focus-ring: rgba(255, 0, 255, 0.3);
+  --status-on-bg: #004400;   --status-on-text: #00ff00;
+  --status-off-bg: #440000;  --status-off-text: #ff0000;
+  --status-conn-bg: #444400; --status-conn-text: #ffff00;
+  --hint-bg: #000060;        --hint-text: #00ffff;
+  --hint-border: rgba(0, 255, 255, 0.35);
+  --lyric-active-text: #ff00ff;
+  --lyric-active-bg: #000060;
+  --lyric-active-border: #ffff00;
+  --input-bg: #ffffff;
+  --radius: 0px;
+  --radius-sm: 0px;
+}
+
+/* Gestirnter Hintergrund + diagonales Muster */
+[data-theme="geocities"] body {
+  background-image:
+    radial-gradient(circle, #ffffff 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 60px 60px, 130px 130px, 90px 90px;
+  background-position: 0 0, 30px 30px, 15px 45px;
+}
+
+/* Dicker 3D-Rahmen wie Windows 95 Dialog-Boxen */
+[data-theme="geocities"] .controls,
+[data-theme="geocities"] .metrics-panel,
+[data-theme="geocities"] .name-editor,
+[data-theme="geocities"] .karaoke,
+[data-theme="geocities"] .identity-panel {
+  border: 3px solid;
+  border-color: #ffffff #808080 #808080 #ffffff;
+  box-shadow: inset 1px 1px 0 #dfdfdf, inset -1px -1px 0 #404040;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    BASE STYLES
 ═══════════════════════════════════════════════════════════════ */
 
@@ -965,6 +1079,8 @@ button.identity-delete:hover:not(:disabled) { background: var(--status-off-bg); 
 .theme-option--y2k         .theme-option-label::before { background: linear-gradient(180deg, #7ac0ff, #1a6cd8); }
 .theme-option--vaporwave   .theme-option-label::before { background: linear-gradient(135deg, #01cdfe, #b967ff); }
 .theme-option--lava        .theme-option-label::before { background: linear-gradient(180deg, #ff6600, #8b0000); }
+.theme-option--rennbahn    .theme-option-label::before { background: linear-gradient(90deg, #ff0000, #ffcc00, #00cc00, #0088ff, #8800ff); }
+.theme-option--geocities   .theme-option-label::before { background: #000080; border: 1.5px solid #ff00ff; }
 
 /* ── Stage ── */
 
